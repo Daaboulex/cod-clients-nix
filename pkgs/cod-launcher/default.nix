@@ -14,8 +14,10 @@
 {
   name,
   desktopName,
-  exe,
-  url,
+  exe ? "",
+  url ? "",
+  acquire ? "",
+  extraRuntimeInputs ? [ ],
   protonPath ? "${proton-ge-bin.steamcompattool}",
   winetricks ? [ ],
   env ? { },
@@ -44,7 +46,8 @@ let
       curl
       coreutils
       gnugrep
-    ];
+    ]
+    ++ extraRuntimeInputs;
     text = ''
       ${steamResolver}
       ${sandboxFn}
@@ -52,7 +55,10 @@ let
 
       state="''${XDG_DATA_HOME:-$HOME/.local/share}/cod-clients/${name}"
       mkdir -p "$state"
+      cd "$state"
       gamedir=""
+      gamedir_rw=""
+      run=""
 
       export WINEPREFIX="$state/pfx"
       export GAMEID="umu-cod-${name}"
@@ -72,14 +78,20 @@ let
           touch "$state/${marker}"
         fi
       ''}
-      if [ ! -f "$state/${exe}" ]; then
-        echo "cod-${name}: fetching the official client from ${url}"
-        curl -fL --output "$state/${exe}" "${url}"
-      fi
-
-      run="$state/${exe}"
-      cd "$state"
+      ${lib.optionalString (url != "") ''
+        if [ ! -f "$state/${exe}" ]; then
+          echo "cod-${name}: fetching the official client from ${url}"
+          curl -fL --output "$state/${exe}" "${url}"
+        fi
+        run="$state/${exe}"
+      ''}
+      ${acquire}
       ${preLaunch}
+
+      if [ -z "$run" ]; then
+        echo "cod-${name}: could not resolve a client executable to run" >&2
+        exit 1
+      fi
 
       cod_launch umu-run "$run" ${argsStr}
     '';

@@ -74,6 +74,14 @@ in
         description = "Extra arguments passed to t7x.exe.";
       };
     };
+
+    alterware = {
+      iw4x.enable = lib.mkEnableOption "the iw4x launcher (Modern Warfare 2, 2009) -- experimental";
+      iw5.enable = lib.mkEnableOption "the iw5-mod launcher (Modern Warfare 3, 2011) -- experimental";
+      iw6.enable = lib.mkEnableOption "the iw6-mod launcher (Ghosts) -- experimental";
+      s1.enable = lib.mkEnableOption "the s1-mod launcher (Advanced Warfare) -- experimental";
+      iw2.enable = lib.mkEnableOption "the iw2-mod launcher (Call of Duty 2) -- experimental";
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -93,7 +101,12 @@ in
       home.packages =
         lib.optional cfg.plutonium.enable clients.plutonium
         ++ lib.optional cfg.plutonium.enable clients.steamlink
-        ++ lib.optional cfg.t7x.enable clients.t7x;
+        ++ lib.optional cfg.t7x.enable clients.t7x
+        ++ lib.optional cfg.alterware.iw4x.enable clients.iw4x
+        ++ lib.optional cfg.alterware.iw5.enable clients.iw5
+        ++ lib.optional cfg.alterware.iw6.enable clients.iw6
+        ++ lib.optional cfg.alterware.s1.enable clients.s1
+        ++ lib.optional cfg.alterware.iw2.enable clients.iw2;
     }
   );
 }

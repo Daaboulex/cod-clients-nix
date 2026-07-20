@@ -2,6 +2,7 @@
   lib,
   callPackage,
   proton-ge-bin,
+  alterware-launcher,
 }:
 
 {
@@ -41,6 +42,42 @@ let
     "win10"
     "grabfullscreen=y"
   ];
+
+  mkAlterware =
+    {
+      name,
+      desktopName,
+      code,
+      appid,
+      exe,
+      modes ? [ ],
+    }:
+    mk {
+      inherit
+        name
+        desktopName
+        sandbox
+        protonPath
+        ;
+      extraRuntimeInputs = [ alterware-launcher ];
+      extraArgs = modes;
+      env = {
+        PROTON_USE_NTSYNC = "1";
+        PROTON_USE_WOW64 = "1";
+      };
+      acquire = ''
+        gamedir="$(resolve_steam_dir ${appid} || true)"
+        if [ -z "$gamedir" ] || [ ! -d "$gamedir" ]; then
+          echo "cod-${name}: ${desktopName} base game not found (own + install it on Steam, app ${appid})" >&2
+          exit 1
+        fi
+        echo "cod-${name}: updating ${code} via alterware-launcher"
+        alterware-launcher ${code} -p "$gamedir" -u
+        gamedir_rw="$gamedir"
+        run="$gamedir/${exe}"
+        cd "$gamedir"
+      '';
+    };
 in
 {
   plutonium = mk {
@@ -104,4 +141,45 @@ in
   };
 
   steamlink = steamlinkPkg;
+
+  iw4x = mkAlterware {
+    name = "iw4x";
+    desktopName = "Call of Duty: Modern Warfare 2 (iw4x)";
+    code = "iw4x-sp";
+    appid = "10180";
+    exe = "iw4x-sp.exe";
+    modes = [ "-multiplayer" ];
+  };
+  iw5 = mkAlterware {
+    name = "iw5";
+    desktopName = "Call of Duty: Modern Warfare 3 (iw5-mod)";
+    code = "iw5-mod";
+    appid = "115300";
+    exe = "iw5-mod.exe";
+    modes = [ "-multiplayer" ];
+  };
+  iw6 = mkAlterware {
+    name = "iw6";
+    desktopName = "Call of Duty: Ghosts (iw6-mod)";
+    code = "iw6-mod";
+    appid = "209160";
+    exe = "iw6-mod.exe";
+    modes = [ "-multiplayer" ];
+  };
+  s1 = mkAlterware {
+    name = "s1";
+    desktopName = "Call of Duty: Advanced Warfare (s1-mod)";
+    code = "s1-mod";
+    appid = "209650";
+    exe = "s1-mod.exe";
+    modes = [ "-multiplayer" ];
+  };
+  iw2 = mkAlterware {
+    name = "iw2";
+    desktopName = "Call of Duty 2 (iw2-mod)";
+    code = "iw2-mod";
+    appid = "2630";
+    exe = "iw2-mod.exe";
+    modes = [ ];
+  };
 }

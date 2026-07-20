@@ -44,6 +44,11 @@
           packages.cod-plutonium = clients.plutonium;
           packages.cod-t7x = clients.t7x;
           packages.cod-steamlink = clients.steamlink;
+          packages.cod-iw4x = clients.iw4x;
+          packages.cod-iw5 = clients.iw5;
+          packages.cod-iw6 = clients.iw6;
+          packages.cod-s1 = clients.s1;
+          packages.cod-iw2 = clients.iw2;
           packages.default = clients.plutonium;
 
           checks.module-eval-hm = inputs.std.lib.homeModuleCheck {
@@ -54,6 +59,13 @@
               enable = true;
               plutonium.enable = true;
               t7x.enable = true;
+              alterware = {
+                iw4x.enable = true;
+                iw5.enable = true;
+                iw6.enable = true;
+                s1.enable = true;
+                iw2.enable = true;
+              };
             };
           };
         };

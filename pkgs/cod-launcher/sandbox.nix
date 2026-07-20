@@ -61,6 +61,9 @@
     if [ -n "''${gamedir:-}" ]; then
       bw+=(--ro-bind-try "$gamedir" "$gamedir")
     fi
+    if [ -n "''${gamedir_rw:-}" ]; then
+      bw+=(--bind-try "$gamedir_rw" "$gamedir_rw")
+    fi
 
     exec "''${bw[@]}" "$@"
   }
