@@ -155,7 +155,42 @@ myModules.home.cod-clients = {
 };
 ```
 
-After a rebuild, launch `cod-plutonium` / `cod-t7x` from your application menu, or run `cod-steamlink` once to play through Steam with hours-tracking. Log in with your client account on first launch.
+After a rebuild the launcher commands (`cod-plutonium`, `cod-t7x`, `cod-steamlink`, `cod-steam-add`) are on your PATH and in your application menu.
+
+## Running the clients
+
+Run each launcher **from a terminal** the first time - you see the setup progress and any errors. The first launch of a client is slow and one-time: it downloads umu's Steam Runtime, builds the Wine prefix, and fetches the client; later launches are fast.
+
+**`cod-plutonium`** - Black Ops 1/2, World at War (MW3/IW5 needs `plutonium.dotnet`):
+
+```bash
+cod-plutonium
+```
+
+First run fetches `plutonium.exe`, installs the prefix verbs (a few minutes), then opens Plutonium's launcher. In it: log in with your free Plutonium forum account, point it at your Steam game folder, pick a title, and play. Start with BO1/BO2/WaW - MW3/IW5 is best-effort (see Caveats).
+
+**`cod-t7x`** - Black Ops III:
+
+```bash
+cod-t7x
+```
+
+Auto-detects your owned BO3 install, builds the symlink farm, fetches t7x, and launches it. Experimental on Linux; if you hit the codec error, set `t7x.extraWinetricks = [ "mf" "mfplat" ]` and rebuild.
+
+For Steam integration - hours, launch options, per-shortcut Proton - see [Add to Steam](#add-to-steam-any-proton-launch-options) and [Steam hours-tracking](#steam-hours-tracking). To switch Proton for a single run without a rebuild, prefix the command:
+
+```bash
+COD_PROTON=~/.steam/steam/compatibilitytools.d/GE-Proton10-34 cod-plutonium
+```
+
+## Troubleshooting
+
+- **First launch seems to hang** - it is downloading the umu runtime and building the prefix (Plutonium's verb install takes several minutes). Run from a terminal to watch; it happens once per client.
+- **`no valid Proton ...`** - `protonPath` is not a directory containing a `proton` script. The default is fine; if you set it, point at a `.../GE-Proton*/` dir, use `protonPath = "steam"`, or `COD_PROTON=<path>`.
+- **A client works only with `COD_SANDBOX=0`** - the sandbox is missing a bind the game needs; `COD_SANDBOX=0 cod-<client>` is the interim bypass. Please report it.
+- **t7x: black screen or a "Media Feature Pack"/codec error** - the known GStreamer/Media-Foundation issue; try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
+- **Game not found** - detection reads Steam's `libraryfolders.vdf`; for an unusual install pass `t7x.blackOps3Dir = "/path"` or `cod-steamlink --dir /path`. See Store detection.
+- **Interrupted download** - fetches use `--remove-on-error`, so just re-run the launcher.
 
 ## Development
 
