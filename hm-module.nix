@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.myModules.home.codClients;
+  cfg = config.myModules.home.cod-clients;
 in
 {
-  options.myModules.home.codClients = {
+  options.myModules.home.cod-clients = {
     enable = lib.mkEnableOption "Call of Duty custom clients launcher (Plutonium + t7x) via umu + Proton";
 
     protonPath = lib.mkOption {

@@ -49,7 +49,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 The repo exports `homeManagerModules.default`. Options:
 
 ```nix
-myModules.home.codClients = {
+myModules.home.cod-clients = {
   enable = true;                         # master switch
   sandbox = true;                        # bubblewrap: game-only access (default on)
   protonPath = "${pkgs.proton-ge-bin.steamcompattool}";  # default: pinned nixpkgs GE-Proton
@@ -116,7 +116,7 @@ Each shortcut points at the launcher - so it keeps the bubblewrap sandbox, the w
 
 ## Security
 
-Every launcher runs inside a bubblewrap sandbox (`myModules.home.codClients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes only what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, and GPU/audio/input/display/network. It hides `$HOME` and every unrelated file, and nests inside umu's own Steam Runtime container. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
+Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes only what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, and GPU/audio/input/display/network. It hides `$HOME` and every unrelated file, and nests inside umu's own Steam Runtime container. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
 
 ## Caveats
 
@@ -148,7 +148,7 @@ Add as a flake input:
 home-manager.sharedModules = [ inputs.cod-clients.homeManagerModules.default ];
 
 # 2. enable it in the host HM config:
-myModules.home.codClients = {
+myModules.home.cod-clients = {
   enable = true;
   plutonium.enable = true;
   t7x.enable = true;
