@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 <!-- END generated:badges -->
 
-Call of Duty custom clients packaged for NixOS - a Home Manager launcher module that runs Plutonium and t7x under umu-launcher + Proton, keeping each client current from its own official source, and optionally links Plutonium into Steam so it tracks your hours.
+Call of Duty custom clients packaged for NixOS - a Home Manager launcher module that runs Plutonium, t7x, and the AlterWare family under umu-launcher + Proton, each confined in a bubblewrap sandbox with access to only game-related files, and optionally links Plutonium into Steam so it tracks your hours.
 
 <!-- BEGIN generated:upstream -->
 ## Upstream
@@ -21,13 +21,14 @@ Call of Duty custom clients packaged for NixOS - a Home Manager launcher module 
 
 ## What Is This?
 
-A Nix flake that launches community Call of Duty clients on Linux without hand-rolling a Wine prefix. It provides three commands:
+A Nix flake that launches community Call of Duty clients on Linux without hand-rolling a Wine prefix. Launchers:
 
-- **`cod-plutonium`** - standalone launcher for Black Ops 1 (T5), Black Ops 2 (T6), Modern Warfare 3 (IW5), World at War (T4). Fetches the official self-updating `plutonium.exe`, bootstraps a Proton prefix with the required winetricks verbs, and launches under umu-launcher.
-- **`cod-t7x`** - standalone launcher for Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
+- **`cod-plutonium`** - Black Ops 1 (T5), Black Ops 2 (T6), Modern Warfare 3 (IW5), World at War (T4). Fetches the official self-updating `plutonium.exe`, bootstraps a Proton prefix with the required winetricks verbs, and launches under umu-launcher.
+- **`cod-t7x`** - Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
+- **`cod-iw4x` / `cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 2 (2009), Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 
-The client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers on every launch - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
+Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
 
 ## Clients
 
@@ -36,6 +37,11 @@ The client binaries are fetched at runtime into a per-client state directory and
 | `cod-plutonium` | BO1, BO2, MW3, WaW | 202970 (BO2), 42700 (BO1), 10090 (WaW), 42750 (free MW3 route) | Standalone umu launcher; point Plutonium at the Steam folder in its UI |
 | `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
 | `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
+| `cod-iw4x` | Modern Warfare 2 (2009) | 10180 | AlterWare; experimental, default-off |
+| `cod-iw5` | Modern Warfare 3 (2011) | 115300 | AlterWare; experimental, default-off |
+| `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
+| `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
+| `cod-iw2` | Call of Duty 2 | 2630 | AlterWare; experimental, default-off |
 
 ## Home Manager Module
 
@@ -44,6 +50,7 @@ The repo exports `homeManagerModules.default`. Options:
 ```nix
 myModules.home.codClients = {
   enable = true;                         # master switch
+  sandbox = true;                        # bubblewrap: game-only access (default on)
   protonPath = "${pkgs.proton-ge-bin.steamcompattool}";  # default: pinned nixpkgs GE-Proton
   plutonium = {
     enable = true;                       # cod-plutonium + cod-steamlink
@@ -56,6 +63,13 @@ myModules.home.codClients = {
     blackOps3Dir = "";                   # empty = auto-detect from Steam
     extraWinetricks = [ ];               # e.g. [ "mf" "mfplat" ] for codec issues
     extraArgs = [ ];
+  };
+  alterware = {                          # experimental, default-off
+    iw4x.enable = false;                 # Modern Warfare 2 (2009)
+    iw5.enable = false;                  # Modern Warfare 3 (2011)
+    iw6.enable = false;                  # Ghosts
+    s1.enable = false;                   # Advanced Warfare
+    iw2.enable = false;                  # Call of Duty 2
   };
 };
 ```
@@ -86,10 +100,15 @@ sudo chattr +i "<path>/t6mp.exe"
 
 `cod-t7x` and `cod-steamlink` locate your games from Steam's own metadata, so a game on any drive is found. They scan every Steam install layout - native (`~/.steam/steam`, `~/.local/share/Steam`), Flatpak (`~/.var/app/com.valvesoftware.Steam`), and Snap (`~/snap/steam`) - and read each one's `steamapps/libraryfolders.vdf` to follow **moved and additional library folders** to the app's `appmanifest_<id>.acf`. If detection ever misses, pass an explicit path (`t7x.blackOps3Dir`, or `cod-steamlink --dir`).
 
+## Security
+
+Every launcher runs inside a bubblewrap sandbox (`myModules.home.codClients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes only what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, and GPU/audio/input/display/network. It hides `$HOME` and every unrelated file, and nests inside umu's own Steam Runtime container. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
+
 ## Caveats
 
 - **You must own the games** on Steam. These launchers mod games you own; they do not provide the base game.
 - **t7x / BO3 is experimental on Linux**: upstream does not test Linux and there are reports of a GStreamer/Media-Foundation codec error under Proton with no confirmed fix. If you hit it, try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
+- **The AlterWare family is experimental**: its Linux launch is unverified end-to-end and the iw4x/iw2 client exe names are inferred. Enable per-game, own the base game, and expect to verify (and possibly adjust) on first run.
 - **Plutonium online play** needs a free Plutonium forum account and the latest revision (the client self-updates to it).
 
 <!-- BEGIN generated:installation -->
