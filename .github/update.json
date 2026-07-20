@@ -9,7 +9,7 @@
     "binary": null,
     "check": "wrapper"
   },
-  "description": "Call of Duty custom clients (Plutonium, t7x) for NixOS - Home Manager launcher module, umu + Proton",
+  "description": "Call of Duty custom clients (Plutonium, t7x) packaged for NixOS - Home Manager launcher module",
   "topics": [
     "nix",
     "nixos",

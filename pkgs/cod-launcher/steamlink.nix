@@ -1,4 +1,5 @@
 {
+  lib,
   writeShellApplication,
   curl,
   coreutils,
@@ -104,4 +105,11 @@ writeShellApplication {
     echo "  sudo chattr +i \"$target\""
     echo "Undo any time: cod-steamlink --undo --appid $appid --exe $exe"
   '';
+  meta = {
+    description = "Steam hours-tracking helper (reversible exe-swap for Plutonium) for NixOS";
+    homepage = "https://github.com/Daaboulex/cod-clients-nix";
+    license = lib.licenses.mit;
+    mainProgram = "cod-steamlink";
+    platforms = [ "x86_64-linux" ];
+  };
 }
