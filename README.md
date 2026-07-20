@@ -25,6 +25,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 
 - **`cod-plutonium`** - Black Ops 1 (T5), Black Ops 2 (T6), Modern Warfare 3 (IW5), World at War (T4). Fetches the official self-updating `plutonium.exe`, bootstraps a Proton prefix with the required winetricks verbs, and launches under umu-launcher.
 - **`cod-t7x`** - Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
+- **`cod-h1`** - Modern Warfare Remastered (Aurora h1-mod). Fetches the self-updating `h1-mod.exe` and runs it against a symlink-farm of your owned MWR install. Default-off, experimental.
 - **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 - **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
@@ -38,6 +39,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 |---|---|---|---|
 | `cod-plutonium` | BO1, BO2, MW3, WaW | 202970 (BO2), 42700 (BO1), 10090 (WaW), 42750 (free MW3 route) | Standalone umu launcher; point Plutonium at the Steam folder in its UI |
 | `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
+| `cod-h1` | MWR | 393080 (Modern Warfare Remastered) | Aurora h1-mod; farm + self-updating client; experimental, default-off |
 | `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
 | `cod-steam-add` | all installed launchers | - | Adds each launcher to Steam as a non-Steam shortcut; Proton + launch options per shortcut |
 | `cod-cleanops` | BO3 retail MP | 311210 (Black Ops III) | Drops CleanOps d3d11.dll into owned BO3 (cheat-removal + P2P); launch via Steam |

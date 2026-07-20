@@ -13,6 +13,8 @@
   blackOps3Dir ? "",
   t7xExtraWinetricks ? [ ],
   t7xExtraArgs ? [ ],
+  mwrDir ? "",
+  h1ExtraArgs ? [ ],
   sandbox ? true,
 }:
 
@@ -138,6 +140,43 @@ in
       ln -sfn "$state/t7x.exe" "$farm/t7x.exe"
 
       run="$farm/t7x.exe"
+      cd "$farm" || exit 1
+    '';
+  };
+
+  h1 = mk {
+    name = "h1";
+    inherit sandbox protonPath;
+    desktopName = "Call of Duty: Modern Warfare Remastered (h1-mod)";
+    url = "https://github.com/auroramod/h1-mod/releases/latest/download/h1-mod.exe";
+    exe = "h1-mod.exe";
+    env = {
+      PROTON_USE_NTSYNC = "1";
+      PROTON_USE_WOW64 = "1";
+    };
+    extraArgs = h1ExtraArgs;
+    preLaunch = ''
+      mwr="${mwrDir}"
+      if [ -z "$mwr" ]; then
+        mwr="$(resolve_steam_dir 393080 || true)"
+      fi
+      if [ -z "$mwr" ] || [ ! -d "$mwr" ]; then
+        echo "cod-h1: Modern Warfare Remastered not found (own + install it on Steam, app 393080) or set h1.mwrDir" >&2
+        exit 1
+      fi
+      gamedir="$mwr"
+
+      farm="$state/game"
+      if [ ! -f "$state/.farm-ready" ]; then
+        echo "cod-h1: building the game farm from $mwr"
+        rm -rf "$farm"
+        mkdir -p "$farm"
+        cp -rs "$mwr/." "$farm/"
+        touch "$state/.farm-ready"
+      fi
+      ln -sfn "$state/h1-mod.exe" "$farm/h1-mod.exe"
+
+      run="$farm/h1-mod.exe"
       cd "$farm" || exit 1
     '';
   };

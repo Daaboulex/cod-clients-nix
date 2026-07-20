@@ -37,6 +37,7 @@
         {
           cod-plutonium = clients.plutonium;
           cod-t7x = clients.t7x;
+          cod-h1 = clients.h1;
           cod-steamlink = clients.steamlink;
           cod-steam-add = clients.steamadd;
           cod-cleanops = clients.cleanops;
@@ -60,6 +61,7 @@
 
           packages.cod-plutonium = pkgs.cod-plutonium;
           packages.cod-t7x = pkgs.cod-t7x;
+          packages.cod-h1 = pkgs.cod-h1;
           packages.cod-steamlink = pkgs.cod-steamlink;
           packages.cod-steam-add = pkgs.cod-steam-add;
           packages.cod-cleanops = pkgs.cod-cleanops;
@@ -77,6 +79,7 @@
               enable = true;
               plutonium.enable = true;
               t7x.enable = true;
+              h1.enable = true;
               alterware = {
                 iw5.enable = true;
                 iw6.enable = true;
