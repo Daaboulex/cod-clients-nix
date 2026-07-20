@@ -27,6 +27,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 - **`cod-t7x`** - Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
 - **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
+- **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
 
 Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
 
@@ -37,6 +38,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 | `cod-plutonium` | BO1, BO2, MW3, WaW | 202970 (BO2), 42700 (BO1), 10090 (WaW), 42750 (free MW3 route) | Standalone umu launcher; point Plutonium at the Steam folder in its UI |
 | `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
 | `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
+| `cod-steam-add` | all installed launchers | - | Adds each launcher to Steam as a non-Steam shortcut; Proton + launch options per shortcut |
 | `cod-iw5` | Modern Warfare 3 (2011) | 115300 | AlterWare; experimental, default-off |
 | `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
 | `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
@@ -93,6 +95,20 @@ sudo chattr +i "<path>/t6mp.exe"
 ```
 
 `--undo` restores the backup. Because Plutonium's launcher lets you pick any title, one swap (e.g. Black Ops II) is enough to track all your Plutonium hours under that game.
+
+## Add to Steam (any Proton, launch options)
+
+`cod-steam-add` registers every installed `cod-*` launcher as a non-Steam shortcut - the Heroic-style "Add to Steam", done for you:
+
+```bash
+cod-steam-add          # add all installed launchers (close Steam first)
+cod-steam-add list     # show which are registered
+cod-steam-add remove   # remove them again
+```
+
+Close Steam before adding (it rewrites `shortcuts.vdf` on exit); the helper backs up that file, only ever touches its own tagged entries, and never clobbers your other shortcuts. Restart Steam afterwards.
+
+Each shortcut points at the launcher - so it keeps the bubblewrap sandbox, the winetricks prefix, and the runtime client-fetch. That means **Proton is chosen per shortcut in Steam's Launch Options, not the Compatibility dropdown**: Steam's forced-Proton only drives a raw Windows `.exe` and would break a native launcher script. Set a specific Proton with `COD_PROTON=/path/to/proton %command%` in the shortcut's Launch Options (or leave it to `protonPath`). Launch options and Steam playtime work as normal.
 
 ## Store detection
 

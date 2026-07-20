@@ -38,6 +38,7 @@
           cod-plutonium = clients.plutonium;
           cod-t7x = clients.t7x;
           cod-steamlink = clients.steamlink;
+          cod-steam-add = clients.steamadd;
           cod-iw5 = clients.iw5;
           cod-iw6 = clients.iw6;
           cod-s1 = clients.s1;
@@ -59,6 +60,7 @@
           packages.cod-plutonium = pkgs.cod-plutonium;
           packages.cod-t7x = pkgs.cod-t7x;
           packages.cod-steamlink = pkgs.cod-steamlink;
+          packages.cod-steam-add = pkgs.cod-steam-add;
           packages.cod-iw5 = pkgs.cod-iw5;
           packages.cod-iw6 = pkgs.cod-iw6;
           packages.cod-s1 = pkgs.cod-s1;
@@ -81,6 +83,15 @@
               };
             };
           };
+
+          checks.steam-add-logic =
+            let
+              py = pkgs.python3.withPackages (ps: [ ps.vdf ]);
+            in
+            pkgs.runCommand "steam-add-logic" { nativeBuildInputs = [ py ]; } ''
+              python3 ${./pkgs/cod-launcher/steam-add-test.py} ${./pkgs/cod-launcher/steam-add.py}
+              touch $out
+            '';
         };
     };
 }

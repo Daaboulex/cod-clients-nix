@@ -99,14 +99,16 @@ in
       };
     in
     {
-      home.packages =
-        lib.optional cfg.plutonium.enable clients.plutonium
-        ++ lib.optional cfg.plutonium.enable clients.steamlink
-        ++ lib.optional cfg.t7x.enable clients.t7x
-        ++ lib.optional cfg.alterware.iw5.enable clients.iw5
-        ++ lib.optional cfg.alterware.iw6.enable clients.iw6
-        ++ lib.optional cfg.alterware.s1.enable clients.s1
-        ++ lib.optional cfg.alterware.iw2.enable clients.iw2;
+      home.packages = [
+        clients.steamadd
+      ]
+      ++ lib.optional cfg.plutonium.enable clients.plutonium
+      ++ lib.optional cfg.plutonium.enable clients.steamlink
+      ++ lib.optional cfg.t7x.enable clients.t7x
+      ++ lib.optional cfg.alterware.iw5.enable clients.iw5
+      ++ lib.optional cfg.alterware.iw6.enable clients.iw6
+      ++ lib.optional cfg.alterware.s1.enable clients.s1
+      ++ lib.optional cfg.alterware.iw2.enable clients.iw2;
     }
   );
 }
