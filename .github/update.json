@@ -1,0 +1,29 @@
+{
+  "package": "cod-clients",
+  "upstream": {
+    "type": "none"
+  },
+  "packageFile": null,
+  "hashes": [],
+  "verify": {
+    "binary": null,
+    "check": "wrapper"
+  },
+  "description": "Call of Duty custom clients (Plutonium, t7x) for NixOS - Home Manager launcher module, umu + Proton",
+  "topics": [
+    "nix",
+    "nixos",
+    "flake",
+    "home-manager",
+    "plutonium",
+    "t7x",
+    "call-of-duty",
+    "wine",
+    "proton",
+    "umu",
+    "gaming"
+  ],
+  "platforms": {
+    "aarch64-linux": "Windows game clients under Proton/Wine; x86_64-only umu-launcher + proton-ge-bin"
+  }
+}
