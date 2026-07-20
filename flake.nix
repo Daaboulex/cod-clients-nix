@@ -41,6 +41,7 @@
           cod-h2 = clients.h2;
           cod-steamlink = clients.steamlink;
           cod-steam-add = clients.steamadd;
+          cod-steam-native = clients.steamnative;
           cod-cleanops = clients.cleanops;
           cod-iw5 = clients.iw5;
           cod-iw6 = clients.iw6;
@@ -66,6 +67,7 @@
           packages.cod-h2 = pkgs.cod-h2;
           packages.cod-steamlink = pkgs.cod-steamlink;
           packages.cod-steam-add = pkgs.cod-steam-add;
+          packages.cod-steam-native = pkgs.cod-steam-native;
           packages.cod-cleanops = pkgs.cod-cleanops;
           packages.cod-iw5 = pkgs.cod-iw5;
           packages.cod-iw6 = pkgs.cod-iw6;
@@ -98,6 +100,15 @@
             in
             pkgs.runCommand "steam-add-logic" { nativeBuildInputs = [ py ]; } ''
               python3 ${./pkgs/cod-launcher/steam-add-test.py} ${./pkgs/cod-launcher/steam-add.py}
+              touch $out
+            '';
+
+          checks.steam-native-logic =
+            let
+              py = pkgs.python3.withPackages (ps: [ ps.vdf ]);
+            in
+            pkgs.runCommand "steam-native-logic" { nativeBuildInputs = [ py ]; } ''
+              python3 ${./pkgs/cod-launcher/steam-native-test.py} ${./pkgs/cod-launcher/steam-native.py}
               touch $out
             '';
         };

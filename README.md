@@ -31,6 +31,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 - **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
 - **`cod-cleanops`** - optional helper that drops the CleanOps `d3d11.dll` into your owned retail Black Ops III, so launching BO3 through Steam loads CleanOps (cheat-removal + P2P hosting). Set the printed `WINEDLLOVERRIDES` launch option; reversible (`--undo`).
+- **`cod-steam-native`** - registers the set-up clients as Steam shortcuts that run their `.exe` under **Steam's own Proton** (so the Compatibility dropdown works), reusing each client's prepared prefix. Plutonium gets one shortcut per owned game+mode (launches straight in via `plutonium://`); sets GE-Proton and fetches official cover art. Reversible (`remove`).
 
 Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
 
@@ -115,6 +116,19 @@ cod-steam-add remove   # remove them again
 Close Steam before adding (it rewrites `shortcuts.vdf` on exit); the helper backs up that file, only ever touches its own tagged entries, and never clobbers your other shortcuts. Restart Steam afterwards.
 
 Each shortcut points at the launcher - so it keeps the bubblewrap sandbox, the winetricks prefix, and the runtime client-fetch. That means **Proton is chosen per shortcut in Steam's Launch Options, not the Compatibility dropdown**: Steam's forced-Proton only drives a raw Windows `.exe` and would break a native launcher script. Set a specific Proton with `COD_PROTON=/path/to/proton %command%` in the shortcut's Launch Options (or leave it to `protonPath`). Launch options and Steam playtime work as normal.
+
+## Steam-native (Proton dropdown + per-mode)
+
+`cod-steam-native` is the other side of that trade-off: instead of the native launcher (where the Compatibility dropdown can't apply), it registers each client's **Windows `.exe`** so Steam runs it under its own Proton and **the dropdown works**. It reuses each client's already-prepared prefix - so Plutonium keeps its winetricks verbs - via `STEAM_COMPAT_DATA_PATH`, sets your newest GE-Proton as the default compat tool, and fetches official cover/hero/logo art.
+
+```bash
+# run each client once first so its prefix + .exe exist, then with Steam closed:
+cod-steam-native          # add per-mode Plutonium + t7x/h1/h2 shortcuts
+cod-steam-native list
+cod-steam-native remove
+```
+
+Plutonium gets one shortcut per owned game+mode (Black Ops II Multiplayer, Zombies, World at War, ...) that launches straight into it via the `plutonium://play/<code>` protocol. The bubblewrap sandbox does not apply on this path (Steam runs the `.exe` directly) - use the standalone `cod-*` launchers when you want the sandbox.
 
 ## Store detection
 

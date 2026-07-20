@@ -140,6 +140,7 @@ in
       home.packages = [
         clients.steamadd
         clients.cleanops
+        clients.steamnative
       ]
       ++ lib.optional cfg.plutonium.enable clients.plutonium
       ++ lib.optional cfg.plutonium.enable clients.steamlink
