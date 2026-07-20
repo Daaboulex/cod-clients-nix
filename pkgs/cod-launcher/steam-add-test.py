@@ -22,6 +22,11 @@ with open(scpath, "wb") as handle:
 files = sa.userdata_shortcut_files([tmp, os.path.join(tmp, "missing")])
 assert files == [scpath], files
 
+os.makedirs(os.path.join(tmp, "userdata", "0", "config"))
+link_root = tmp + "_link"
+os.symlink(tmp, link_root)
+assert sa.userdata_shortcut_files([tmp, link_root]) == [scpath], "dedup/skip-0 failed"
+
 launchers = [
     {"exe": "/nix/x/bin/cod-plutonium", "display": "Plutonium"},
     {"exe": "/nix/x/bin/cod-t7x", "display": "Call of Duty: Black Ops III (t7x)"},

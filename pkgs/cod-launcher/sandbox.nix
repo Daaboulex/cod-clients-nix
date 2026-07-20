@@ -44,6 +44,7 @@
       bw+=(--tmpfs "$rd")
       [ -S "$rd/pipewire-0" ] && bw+=(--ro-bind "$rd/pipewire-0" "$rd/pipewire-0")
       [ -S "$rd/pulse/native" ] && bw+=(--bind "$rd/pulse/native" "$rd/pulse/native")
+      [ -S "$rd/bus" ] && bw+=(--bind "$rd/bus" "$rd/bus")
       if [ -n "''${WAYLAND_DISPLAY:-}" ] && [ -S "$rd/$WAYLAND_DISPLAY" ]; then
         bw+=(--ro-bind "$rd/$WAYLAND_DISPLAY" "$rd/$WAYLAND_DISPLAY")
       fi

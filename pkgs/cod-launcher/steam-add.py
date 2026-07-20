@@ -16,15 +16,23 @@ def shortcut_appid(exe, name):
 
 
 def userdata_shortcut_files(roots):
+    seen = set()
     files = []
     for root in roots:
         userdata = os.path.join(root, "userdata")
         if not os.path.isdir(userdata):
             continue
         for account in os.listdir(userdata):
+            if account == "0":
+                continue
             config_dir = os.path.join(userdata, account, "config")
-            if os.path.isdir(config_dir):
-                files.append(os.path.join(config_dir, "shortcuts.vdf"))
+            if not os.path.isdir(config_dir):
+                continue
+            key = os.path.realpath(config_dir)
+            if key in seen:
+                continue
+            seen.add(key)
+            files.append(os.path.join(config_dir, "shortcuts.vdf"))
     return files
 
 
