@@ -130,7 +130,7 @@ in
         rm -rf "$farm"
         mkdir -p "$farm"
         cp -rs "$bo3/." "$farm/"
-        cp -f --no-preserve=mode "$bo3/BlackOps3.exe" "$farm/BlackOps3.exe"
+        cp -f --remove-destination --no-preserve=mode "$bo3/BlackOps3.exe" "$farm/BlackOps3.exe"
         touch "$state/.farm-ready"
       fi
       ln -sfn "$state/t7x.exe" "$farm/t7x.exe"
