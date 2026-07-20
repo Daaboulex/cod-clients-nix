@@ -29,26 +29,41 @@
       flake.homeManagerModules.default = import ./hm-module.nix;
       flake.homeManagerModules.cod-clients = import ./hm-module.nix;
 
+      flake.overlays.default =
+        _final: prev:
+        let
+          clients = (prev.callPackage ./pkgs/cod-launcher/clients.nix { }) { };
+        in
+        {
+          cod-plutonium = clients.plutonium;
+          cod-t7x = clients.t7x;
+          cod-steamlink = clients.steamlink;
+          cod-iw5 = clients.iw5;
+          cod-iw6 = clients.iw6;
+          cod-s1 = clients.s1;
+          cod-iw2 = clients.iw2;
+        };
+
       perSystem =
         { system, ... }:
         let
           pkgs = import inputs.nixpkgs {
             inherit system;
             config.allowUnfree = true;
+            overlays = [ inputs.self.overlays.default ];
           };
-          clients = (pkgs.callPackage ./pkgs/cod-launcher/clients.nix { }) { };
         in
         {
           _module.args.pkgs = pkgs;
 
-          packages.cod-plutonium = clients.plutonium;
-          packages.cod-t7x = clients.t7x;
-          packages.cod-steamlink = clients.steamlink;
-          packages.cod-iw5 = clients.iw5;
-          packages.cod-iw6 = clients.iw6;
-          packages.cod-s1 = clients.s1;
-          packages.cod-iw2 = clients.iw2;
-          packages.default = clients.plutonium;
+          packages.cod-plutonium = pkgs.cod-plutonium;
+          packages.cod-t7x = pkgs.cod-t7x;
+          packages.cod-steamlink = pkgs.cod-steamlink;
+          packages.cod-iw5 = pkgs.cod-iw5;
+          packages.cod-iw6 = pkgs.cod-iw6;
+          packages.cod-s1 = pkgs.cod-s1;
+          packages.cod-iw2 = pkgs.cod-iw2;
+          packages.default = pkgs.cod-plutonium;
 
           checks.module-eval-hm = inputs.std.lib.homeModuleCheck {
             inherit (inputs) nixpkgs home-manager;

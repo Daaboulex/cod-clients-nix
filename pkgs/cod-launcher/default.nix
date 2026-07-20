@@ -130,6 +130,7 @@ symlinkJoin {
   ];
   meta = {
     description = "${desktopName} launcher (umu-launcher + Proton, bubblewrap-sandboxed) for NixOS";
+    homepage = "https://github.com/Daaboulex/cod-clients-nix";
     platforms = [ "x86_64-linux" ];
     license = lib.licenses.unfree;
     mainProgram = "cod-${name}";
