@@ -12,6 +12,7 @@
   blackOps3Dir ? "",
   t7xExtraWinetricks ? [ ],
   t7xExtraArgs ? [ ],
+  sandbox ? true,
 }:
 
 let
@@ -44,6 +45,7 @@ in
 {
   plutonium = mk {
     name = "plutonium";
+    inherit sandbox;
     desktopName = "Plutonium";
     url = "https://cdn.plutonium.pw/updater/plutonium.exe";
     exe = "plutonium.exe";
@@ -63,6 +65,7 @@ in
 
   t7x = mk {
     name = "t7x";
+    inherit sandbox;
     desktopName = "Call of Duty: Black Ops III (t7x)";
     url = "https://master.bo3.eu/t7x/t7x.exe";
     exe = "t7x.exe";
@@ -74,7 +77,6 @@ in
     };
     extraArgs = t7xExtraArgs;
     preLaunch = ''
-      ${steamResolver}
       bo3="${blackOps3Dir}"
       if [ -z "$bo3" ]; then
         bo3="$(resolve_steam_dir 311210 || true)"
@@ -83,6 +85,7 @@ in
         echo "cod-t7x: Black Ops III not found (install it on Steam, app 311210) or set t7x.blackOps3Dir" >&2
         exit 1
       fi
+      gamedir="$bo3"
 
       farm="$state/game"
       if [ ! -f "$state/.farm-ready" ]; then

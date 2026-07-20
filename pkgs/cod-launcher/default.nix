@@ -3,6 +3,7 @@
   writeShellApplication,
   umu-launcher,
   proton-ge-bin,
+  bubblewrap,
   curl,
   coreutils,
   gnugrep,
@@ -20,11 +21,14 @@
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
+  sandbox ? true,
   icon ? "input-gaming",
   categories ? [ "Game" ],
 }:
 
 let
+  steamResolver = import ./steam-resolve.nix;
+  sandboxFn = import ./sandbox.nix;
   verbStr = lib.concatStringsSep " " winetricks;
   marker = ".prefix-" + builtins.substring 0 12 (builtins.hashString "sha256" verbStr);
   envExports = lib.concatStringsSep "\n" (
@@ -36,13 +40,19 @@ let
     name = "cod-${name}";
     runtimeInputs = [
       umu-launcher
+      bubblewrap
       curl
       coreutils
       gnugrep
     ];
     text = ''
+      ${steamResolver}
+      ${sandboxFn}
+      export COD_SANDBOX="''${COD_SANDBOX:-${if sandbox then "1" else "0"}}"
+
       state="''${XDG_DATA_HOME:-$HOME/.local/share}/cod-clients/${name}"
       mkdir -p "$state"
+      gamedir=""
 
       export WINEPREFIX="$state/pfx"
       export GAMEID="umu-cod-${name}"
@@ -58,7 +68,7 @@ let
       ${lib.optionalString (winetricks != [ ]) ''
         if [ ! -f "$state/${marker}" ]; then
           echo "cod-${name}: first-run prefix setup via winetricks (${verbStr})"
-          umu-run winetricks -q ${verbStr}
+          COD_SANDBOX=0 umu-run winetricks -q ${verbStr}
           touch "$state/${marker}"
         fi
       ''}
@@ -68,9 +78,10 @@ let
       fi
 
       run="$state/${exe}"
+      cd "$state"
       ${preLaunch}
 
-      exec umu-run "$run" ${argsStr}
+      cod_launch umu-run "$run" ${argsStr}
     '';
   };
 
@@ -88,7 +99,7 @@ symlinkJoin {
     desktop
   ];
   meta = {
-    description = "${desktopName} launcher (umu-launcher + Proton) for NixOS";
+    description = "${desktopName} launcher (umu-launcher + Proton, bubblewrap-sandboxed) for NixOS";
     platforms = [ "x86_64-linux" ];
     license = lib.licenses.unfree;
     mainProgram = "cod-${name}";

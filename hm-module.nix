@@ -22,6 +22,17 @@ in
       '';
     };
 
+    sandbox = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Run every client inside a bubblewrap sandbox that exposes only game files
+        (Steam libraries, read-only), the client's own prefix/state (read-write),
+        and GPU/audio/input/display/network -- no $HOME or unrelated files. Set the
+        COD_SANDBOX=0 environment variable at runtime to bypass it for one launch.
+      '';
+    };
+
     plutonium = {
       enable = lib.mkEnableOption "the Plutonium client launcher (Black Ops 1/2, MW3, WaW)";
       dotnet = lib.mkEnableOption ''
@@ -75,6 +86,7 @@ in
         inherit (cfg.t7x) blackOps3Dir;
         t7xExtraWinetricks = cfg.t7x.extraWinetricks;
         t7xExtraArgs = cfg.t7x.extraArgs;
+        inherit (cfg) sandbox;
       };
     in
     {
