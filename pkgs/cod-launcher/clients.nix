@@ -15,6 +15,8 @@
   t7xExtraArgs ? [ ],
   mwrDir ? "",
   h1ExtraArgs ? [ ],
+  mw2crDir ? "",
+  h2ExtraArgs ? [ ],
   sandbox ? true,
 }:
 
@@ -82,6 +84,61 @@ let
         cd "$gamedir"
       '';
     };
+
+  mkFarmClient =
+    {
+      name,
+      desktopName,
+      gameName,
+      appid,
+      url,
+      exe,
+      dirOverride ? "",
+      extraArgs ? [ ],
+      realCopyExe ? null,
+    }:
+    mk {
+      inherit
+        name
+        desktopName
+        sandbox
+        protonPath
+        url
+        exe
+        extraArgs
+        ;
+      env = {
+        PROTON_USE_NTSYNC = "1";
+        PROTON_USE_WOW64 = "1";
+      };
+      preLaunch = ''
+        gd="${dirOverride}"
+        if [ -z "$gd" ]; then
+          gd="$(resolve_steam_dir ${appid} || true)"
+        fi
+        if [ -z "$gd" ] || [ ! -d "$gd" ]; then
+          echo "cod-${name}: ${gameName} not found (own + install it on Steam, app ${appid})" >&2
+          exit 1
+        fi
+        gamedir="$gd"
+
+        farm="$state/game"
+        if [ ! -f "$state/.farm-ready" ]; then
+          echo "cod-${name}: building the game farm from $gd"
+          rm -rf "$farm"
+          mkdir -p "$farm"
+          cp -rs "$gd/." "$farm/"
+          ${lib.optionalString (realCopyExe != null) ''
+            cp -f --remove-destination --no-preserve=mode "$gd/${realCopyExe}" "$farm/${realCopyExe}"
+          ''}
+          touch "$state/.farm-ready"
+        fi
+        ln -sfn "$state/${exe}" "$farm/${exe}"
+
+        run="$farm/${exe}"
+        cd "$farm" || exit 1
+      '';
+    };
 in
 {
   plutonium = mk {
@@ -144,41 +201,26 @@ in
     '';
   };
 
-  h1 = mk {
+  h1 = mkFarmClient {
     name = "h1";
-    inherit sandbox protonPath;
     desktopName = "Call of Duty: Modern Warfare Remastered (h1-mod)";
+    gameName = "Modern Warfare Remastered";
+    appid = "393080";
     url = "https://github.com/auroramod/h1-mod/releases/latest/download/h1-mod.exe";
     exe = "h1-mod.exe";
-    env = {
-      PROTON_USE_NTSYNC = "1";
-      PROTON_USE_WOW64 = "1";
-    };
+    dirOverride = mwrDir;
     extraArgs = h1ExtraArgs;
-    preLaunch = ''
-      mwr="${mwrDir}"
-      if [ -z "$mwr" ]; then
-        mwr="$(resolve_steam_dir 393080 || true)"
-      fi
-      if [ -z "$mwr" ] || [ ! -d "$mwr" ]; then
-        echo "cod-h1: Modern Warfare Remastered not found (own + install it on Steam, app 393080) or set h1.mwrDir" >&2
-        exit 1
-      fi
-      gamedir="$mwr"
+  };
 
-      farm="$state/game"
-      if [ ! -f "$state/.farm-ready" ]; then
-        echo "cod-h1: building the game farm from $mwr"
-        rm -rf "$farm"
-        mkdir -p "$farm"
-        cp -rs "$mwr/." "$farm/"
-        touch "$state/.farm-ready"
-      fi
-      ln -sfn "$state/h1-mod.exe" "$farm/h1-mod.exe"
-
-      run="$farm/h1-mod.exe"
-      cd "$farm" || exit 1
-    '';
+  h2 = mkFarmClient {
+    name = "h2";
+    desktopName = "Call of Duty: Modern Warfare 2 Campaign Remastered (h2-mod)";
+    gameName = "Modern Warfare 2 Campaign Remastered";
+    appid = "1213210";
+    url = "https://h2-mod.alicent.cat/data/h2-mod.exe";
+    exe = "h2-mod.exe";
+    dirOverride = mw2crDir;
+    extraArgs = h2ExtraArgs;
   };
 
   steamlink = steamlinkPkg;

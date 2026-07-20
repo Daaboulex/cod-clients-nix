@@ -94,6 +94,23 @@ in
       };
     };
 
+    h2 = {
+      enable = lib.mkEnableOption "the h2-mod launcher (Modern Warfare 2 Campaign Remastered, Aurora) -- experimental";
+      mw2crDir = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = ''
+          Path to the owned Modern Warfare 2 Campaign Remastered Steam install directory.
+          Empty = auto-detect from Steam's libraryfolders.vdf (app 1213210).
+        '';
+      };
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra arguments passed to h2-mod.exe.";
+      };
+    };
+
     alterware = {
       iw5.enable = lib.mkEnableOption "the iw5-mod launcher (Modern Warfare 3, 2011) -- experimental";
       iw6.enable = lib.mkEnableOption "the iw6-mod launcher (Ghosts) -- experimental";
@@ -114,6 +131,8 @@ in
         t7xExtraArgs = cfg.t7x.extraArgs;
         mwrDir = cfg.h1.mwrDir;
         h1ExtraArgs = cfg.h1.extraArgs;
+        mw2crDir = cfg.h2.mw2crDir;
+        h2ExtraArgs = cfg.h2.extraArgs;
         inherit (cfg) sandbox;
       };
     in
@@ -126,6 +145,7 @@ in
       ++ lib.optional cfg.plutonium.enable clients.steamlink
       ++ lib.optional cfg.t7x.enable clients.t7x
       ++ lib.optional cfg.h1.enable clients.h1
+      ++ lib.optional cfg.h2.enable clients.h2
       ++ lib.optional cfg.alterware.iw5.enable clients.iw5
       ++ lib.optional cfg.alterware.iw6.enable clients.iw6
       ++ lib.optional cfg.alterware.s1.enable clients.s1
