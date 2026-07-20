@@ -63,12 +63,30 @@ let
       export WINEPREFIX="$state/pfx"
       export GAMEID="umu-cod-${name}"
       export STORE="none"
-      export PROTONPATH="${protonPath}"
+      protonPath_baked=${lib.escapeShellArg protonPath}
+      resolve_proton() {
+        if [ -n "''${COD_PROTON:-}" ]; then
+          printf '%s\n' "$COD_PROTON"
+          return 0
+        fi
+        if [ "$protonPath_baked" = steam ]; then
+          local root d
+          while IFS= read -r root; do
+            for d in "$root"/compatibilitytools.d/*/; do
+              [ -f "''${d}proton" ] && printf '%s\n' "''${d%/}"
+            done
+          done < <(_steam_roots) | sort -V | tail -n1
+          return 0
+        fi
+        printf '%s\n' "$protonPath_baked"
+      }
+      PROTONPATH="$(resolve_proton)"
+      export PROTONPATH
       ${envExports}
 
-      if [ ! -d "$PROTONPATH" ]; then
-        echo "cod-${name}: PROTONPATH is not a directory: $PROTONPATH" >&2
-        echo "Set myModules.home.codClients.protonPath to a valid Proton directory." >&2
+      if [ -z "$PROTONPATH" ] || [ ! -f "$PROTONPATH/proton" ]; then
+        echo "cod-${name}: no valid Proton (a directory containing 'proton') at: '$PROTONPATH'" >&2
+        echo "Set protonPath to a Proton directory, or to \"steam\" to auto-detect from Steam's compatibilitytools.d, or set COD_PROTON=<path>." >&2
         exit 1
       fi
       ${lib.optionalString (winetricks != [ ]) ''
@@ -81,7 +99,7 @@ let
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then
           echo "cod-${name}: fetching the official client from ${url}"
-          curl -fL --output "$state/${exe}" "${url}"
+          curl -fL --remove-on-error --output "$state/${exe}" "${url}"
         fi
         run="$state/${exe}"
       ''}

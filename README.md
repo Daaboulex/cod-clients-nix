@@ -25,7 +25,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 
 - **`cod-plutonium`** - Black Ops 1 (T5), Black Ops 2 (T6), Modern Warfare 3 (IW5), World at War (T4). Fetches the official self-updating `plutonium.exe`, bootstraps a Proton prefix with the required winetricks verbs, and launches under umu-launcher.
 - **`cod-t7x`** - Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
-- **`cod-iw4x` / `cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 2 (2009), Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
+- **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 
 Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
@@ -37,7 +37,6 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 | `cod-plutonium` | BO1, BO2, MW3, WaW | 202970 (BO2), 42700 (BO1), 10090 (WaW), 42750 (free MW3 route) | Standalone umu launcher; point Plutonium at the Steam folder in its UI |
 | `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
 | `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
-| `cod-iw4x` | Modern Warfare 2 (2009) | 10180 | AlterWare; experimental, default-off |
 | `cod-iw5` | Modern Warfare 3 (2011) | 115300 | AlterWare; experimental, default-off |
 | `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
 | `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
@@ -65,7 +64,6 @@ myModules.home.codClients = {
     extraArgs = [ ];
   };
   alterware = {                          # experimental, default-off
-    iw4x.enable = false;                 # Modern Warfare 2 (2009)
     iw5.enable = false;                  # Modern Warfare 3 (2011)
     iw6.enable = false;                  # Ghosts
     s1.enable = false;                   # Advanced Warfare
@@ -74,7 +72,7 @@ myModules.home.codClients = {
 };
 ```
 
-- **`protonPath`** is what umu runs the clients under. The default pins nixpkgs GE-Proton reproducibly (its `steamcompattool` output). If you manage Proton with ProtonPlus and would rather reuse it, set this to that directory, e.g. `"${config.home.homeDirectory}/.steam/steam/compatibilitytools.d/GE-Proton10-34"`.
+- **`protonPath`** is what umu runs the clients under. The default pins nixpkgs GE-Proton reproducibly (its `steamcompattool` output). Set it to a ProtonPlus-managed Proton path to reuse that, or to `"steam"` to auto-detect the newest Proton in your Steam `compatibilitytools.d`. To change Proton **on the fly**, set `COD_PROTON=<path>` per launch (e.g. `COD_PROTON=~/.steam/steam/compatibilitytools.d/GE-Proton10-34 cod-plutonium`). The `cod-steamlink` path instead uses Steam's own per-game Compatibility dropdown.
 - **`plutonium.dotnet`** adds `dotnet472` for MW3/IW5. It is off by default because the install is slow and MW3/IW5 has an unfixed no-cursor bug on NixOS + GE-Proton; BO1/BO2/WaW do not need it.
 - **`t7x.blackOps3Dir`** empty auto-detects Black Ops III (app 311210) from Steam - see Store detection.
 

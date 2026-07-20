@@ -142,14 +142,6 @@ in
 
   steamlink = steamlinkPkg;
 
-  iw4x = mkAlterware {
-    name = "iw4x";
-    desktopName = "Call of Duty: Modern Warfare 2 (iw4x)";
-    code = "iw4x-sp";
-    appid = "10180";
-    exe = "iw4x-sp.exe";
-    modes = [ "-multiplayer" ];
-  };
   iw5 = mkAlterware {
     name = "iw5";
     desktopName = "Call of Duty: Modern Warfare 3 (iw5-mod)";

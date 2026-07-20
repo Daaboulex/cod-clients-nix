@@ -24,15 +24,15 @@ writeShellApplication {
     while [ "$#" -gt 0 ]; do
       case "$1" in
       --appid)
-        appid="$2"
+        appid="''${2:?--appid needs a value}"
         shift 2
         ;;
       --exe)
-        exe="$2"
+        exe="''${2:?--exe needs a value}"
         shift 2
         ;;
       --dir)
-        gamedir="$2"
+        gamedir="''${2:?--dir needs a value}"
         shift 2
         ;;
       --undo)
@@ -66,9 +66,11 @@ writeShellApplication {
     if [ "$undo" -eq 1 ]; then
       if [ -f "$backup" ]; then
         chmod +w "$target" 2>/dev/null || true
-        cp -f "$backup" "$target"
+        if ! cp -f "$backup" "$target"; then
+          echo "cod-steamlink: restore failed -- if the file is immutable, run: sudo chattr -i \"$target\" then retry --undo" >&2
+          exit 1
+        fi
         echo "cod-steamlink: restored $exe from backup."
-        echo "If restore failed because the file is locked, run: sudo chattr -i \"$target\""
       else
         echo "cod-steamlink: no backup at $backup; nothing to undo." >&2
         exit 1
@@ -86,7 +88,7 @@ writeShellApplication {
     if [ ! -f "$pluto" ]; then
       mkdir -p "$state"
       echo "cod-steamlink: fetching the official Plutonium launcher"
-      curl -fL --output "$pluto" "https://cdn.plutonium.pw/updater/plutonium.exe"
+      curl -fL --remove-on-error --output "$pluto" "https://cdn.plutonium.pw/updater/plutonium.exe"
     fi
 
     if [ ! -f "$backup" ]; then

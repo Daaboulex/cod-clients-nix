@@ -10,6 +10,7 @@
       --die-with-parent --new-session
       --proc /proc --dev /dev --tmpfs /tmp
       --ro-bind /nix/store /nix/store
+      --ro-bind-try "$PROTONPATH" "$PROTONPATH"
       --ro-bind-try /etc/static /etc/static
       --ro-bind-try /etc/passwd /etc/passwd
       --ro-bind-try /etc/group /etc/group
