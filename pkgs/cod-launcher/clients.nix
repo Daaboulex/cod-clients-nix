@@ -21,6 +21,7 @@ let
   steamResolver = import ./steam-resolve.nix;
   steamlinkPkg = (callPackage ./steamlink.nix { }) { resolver = steamResolver; };
   steamaddPkg = callPackage ./steam-add.nix { };
+  cleanopsPkg = (callPackage ./cleanops.nix { }) { resolver = steamResolver; };
 
   plutoniumBaseVerbs = [
     "corefonts"
@@ -143,6 +144,7 @@ in
 
   steamlink = steamlinkPkg;
   steamadd = steamaddPkg;
+  cleanops = cleanopsPkg;
 
   iw5 = mkAlterware {
     name = "iw5";

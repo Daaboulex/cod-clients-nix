@@ -39,6 +39,7 @@
           cod-t7x = clients.t7x;
           cod-steamlink = clients.steamlink;
           cod-steam-add = clients.steamadd;
+          cod-cleanops = clients.cleanops;
           cod-iw5 = clients.iw5;
           cod-iw6 = clients.iw6;
           cod-s1 = clients.s1;
@@ -61,6 +62,7 @@
           packages.cod-t7x = pkgs.cod-t7x;
           packages.cod-steamlink = pkgs.cod-steamlink;
           packages.cod-steam-add = pkgs.cod-steam-add;
+          packages.cod-cleanops = pkgs.cod-cleanops;
           packages.cod-iw5 = pkgs.cod-iw5;
           packages.cod-iw6 = pkgs.cod-iw6;
           packages.cod-s1 = pkgs.cod-s1;

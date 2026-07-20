@@ -28,6 +28,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 - **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 - **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
+- **`cod-cleanops`** - optional helper that drops the CleanOps `d3d11.dll` into your owned retail Black Ops III, so launching BO3 through Steam loads CleanOps (cheat-removal + P2P hosting). Set the printed `WINEDLLOVERRIDES` launch option; reversible (`--undo`).
 
 Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
 
@@ -39,6 +40,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 | `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
 | `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
 | `cod-steam-add` | all installed launchers | - | Adds each launcher to Steam as a non-Steam shortcut; Proton + launch options per shortcut |
+| `cod-cleanops` | BO3 retail MP | 311210 (Black Ops III) | Drops CleanOps d3d11.dll into owned BO3 (cheat-removal + P2P); launch via Steam |
 | `cod-iw5` | Modern Warfare 3 (2011) | 115300 | AlterWare; experimental, default-off |
 | `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
 | `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
