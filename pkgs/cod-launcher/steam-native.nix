@@ -105,6 +105,11 @@ writeShellApplication {
     add_farm h1 "h1-mod: Modern Warfare Remastered" "game/h1-mod.exe" 393080
     add_farm h2 "h2-mod: MW2 Campaign Remastered" "game/h2-mod.exe" 1213210
 
+    if command -v cod-cblauncher >/dev/null 2>&1; then
+      add_shortcut "CB Launcher" "$state_root/cblauncher/cb-launcher.exe" \
+        "STEAM_COMPAT_DATA_PATH=$state_root/cblauncher %command% -portable --in-process-gpu" ""
+    fi
+
     if [ "$cmd" = add ] && [ "$shortcuts" = "[]" ]; then
       echo "cod-steam-native: no set-up clients found. Run a cod-<client> at least once first" >&2
       echo "(so its prefix + .exe exist under $state_root), then re-run cod-steam-native." >&2

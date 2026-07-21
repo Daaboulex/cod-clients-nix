@@ -78,10 +78,7 @@ let
         ;
       extraRuntimeInputs = [ alterware-launcher ];
       extraArgs = modes;
-      env = {
-        PROTON_USE_NTSYNC = "1";
-        PROTON_USE_WOW64 = "1";
-      };
+      env = { };
       acquire = ''
         gamedir="$(resolve_steam_dir ${appid} || true)"
         if [ -z "$gamedir" ] || [ ! -d "$gamedir" ]; then
@@ -120,10 +117,7 @@ let
         extraArgs
         desktopEntry
         ;
-      env = {
-        PROTON_USE_NTSYNC = "1";
-        PROTON_USE_WOW64 = "1";
-      };
+      env = { };
       preLaunch = ''
         gd="${dirOverride}"
         ${lib.optionalString (appid != "") ''
@@ -151,6 +145,7 @@ let
           ${lib.optionalString (realCopyExe != null) ''
             cp -f --remove-destination --no-preserve=mode "$gd/${realCopyExe}" "$farm/${realCopyExe}"
           ''}
+          rm -f "$farm/d3d11.dll"
           touch "$state/.farm-ready"
         fi
         ln -sfn "$state/${exe}" "$farm/${exe}"
@@ -171,14 +166,7 @@ in
     inherit protonPath;
     winetricks =
       plutoniumBaseVerbs ++ lib.optional plutoniumDotnet "dotnet472" ++ plutoniumExtraWinetricks;
-    env = {
-      PROTON_USE_NTSYNC = "1";
-      PROTON_USE_WOW64 = "1";
-      PROTON_NO_ESYNC = "1";
-      PROTON_NO_FSYNC = "1";
-      DXVK_STATE_CACHE = "1";
-    }
-    // lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; };
+    env = lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; };
     extraArgs = plutoniumExtraArgs;
   };
 
@@ -191,10 +179,7 @@ in
     exe = "t7x.exe";
     inherit protonPath;
     winetricks = t7xExtraWinetricks;
-    env = {
-      PROTON_USE_NTSYNC = "1";
-      PROTON_USE_WOW64 = "1";
-    };
+    env = { };
     extraArgs = t7xExtraArgs;
     preLaunch = ''
       bo3="${blackOps3Dir}"
@@ -214,6 +199,7 @@ in
         mkdir -p "$farm"
         cp -rs "$bo3/." "$farm/"
         cp -f --remove-destination --no-preserve=mode "$bo3/BlackOps3.exe" "$farm/BlackOps3.exe"
+        rm -f "$farm/d3d11.dll"
         touch "$state/.farm-ready"
       fi
       ln -sfn "$state/t7x.exe" "$farm/t7x.exe"
@@ -259,10 +245,7 @@ in
       "corefonts"
       "dotnetdesktop8"
     ];
-    env = {
-      PROTON_USE_NTSYNC = "1";
-      PROTON_USE_WOW64 = "1";
-    };
+    env = { };
     extraArgs = hmwExtraArgs;
     acquire = ''
       gd="${hmwMwrDir}"
@@ -341,11 +324,12 @@ in
       "xinput"
       "physx"
     ];
-    env = {
-      PROTON_USE_NTSYNC = "1";
-      PROTON_USE_WOW64 = "1";
-    };
-    extraArgs = [ "-portable" ] ++ cblauncherExtraArgs;
+    env = { };
+    extraArgs = [
+      "-portable"
+      "--in-process-gpu"
+    ]
+    ++ cblauncherExtraArgs;
     preLaunch = ''
       cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" cblauncherGameDirs)}
       while IFS= read -r d; do
