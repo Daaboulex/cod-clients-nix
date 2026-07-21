@@ -24,6 +24,7 @@
   boiiiBlackOps3Dir ? "",
   boiiiExtraArgs ? [ ],
   cblauncherExtraArgs ? [ ],
+  desktopEntries ? { },
 }:
 
 let
@@ -64,6 +65,7 @@ let
       appid,
       exe,
       modes ? [ ],
+      desktopEntry ? true,
     }:
     mk {
       inherit
@@ -71,6 +73,7 @@ let
         desktopName
         sandbox
         protonPath
+        desktopEntry
         ;
       extraRuntimeInputs = [ alterware-launcher ];
       extraArgs = modes;
@@ -85,7 +88,7 @@ let
           exit 1
         fi
         echo "cod-${name}: updating ${code} via alterware-launcher"
-        alterware-launcher ${code} -p "$gamedir" -u
+        alterware-launcher ${code} -p "$gamedir" -u --skip-launcher-update
         gamedir_rw="$gamedir"
         run="$gamedir/${exe}"
         cd "$gamedir"
@@ -103,6 +106,7 @@ let
       dirOverride ? "",
       extraArgs ? [ ],
       realCopyExe ? null,
+      desktopEntry ? true,
     }:
     mk {
       inherit
@@ -113,6 +117,7 @@ let
         url
         exe
         extraArgs
+        desktopEntry
         ;
       env = {
         PROTON_USE_NTSYNC = "1";
@@ -120,11 +125,18 @@ let
       };
       preLaunch = ''
         gd="${dirOverride}"
-        if [ -z "$gd" ]; then
-          gd="$(resolve_steam_dir ${appid} || true)"
-        fi
+        ${lib.optionalString (appid != "") ''
+          if [ -z "$gd" ]; then
+            gd="$(resolve_steam_dir ${appid} || true)"
+          fi
+        ''}
         if [ -z "$gd" ] || [ ! -d "$gd" ]; then
-          echo "cod-${name}: ${gameName} not found (own + install it on Steam, app ${appid})" >&2
+          echo "cod-${name}: ${gameName} not found${
+            if appid != "" then
+              " (own + install it on Steam, app ${appid})"
+            else
+              "; set this client's game directory option (this title is not sold on Steam)"
+          }" >&2
           exit 1
         fi
         gamedir="$gd"
@@ -150,6 +162,7 @@ in
 {
   plutonium = mk {
     name = "plutonium";
+    desktopEntry = desktopEntries.plutonium or true;
     inherit sandbox;
     desktopName = "Plutonium";
     url = "https://cdn.plutonium.pw/updater/plutonium.exe";
@@ -170,6 +183,7 @@ in
 
   t7x = mk {
     name = "t7x";
+    desktopEntry = desktopEntries.t7x or true;
     inherit sandbox;
     desktopName = "Call of Duty: Black Ops III (t7x)";
     url = "https://master.bo3.eu/t7x/t7x.exe";
@@ -210,6 +224,7 @@ in
 
   h1 = mkFarmClient {
     name = "h1";
+    desktopEntry = desktopEntries.h1 or true;
     desktopName = "Call of Duty: Modern Warfare Remastered (h1-mod)";
     gameName = "Modern Warfare Remastered";
     appid = "393080";
@@ -221,9 +236,10 @@ in
 
   h2 = mkFarmClient {
     name = "h2";
+    desktopEntry = desktopEntries.h2 or true;
     desktopName = "Call of Duty: Modern Warfare 2 Campaign Remastered (h2-mod)";
     gameName = "Modern Warfare 2 Campaign Remastered";
-    appid = "1213210";
+    appid = "";
     url = "https://h2-mod.alicent.cat/data/h2-mod.exe";
     exe = "h2-mod.exe";
     dirOverride = mw2crDir;
@@ -232,6 +248,7 @@ in
 
   hmw = mk {
     name = "hmw";
+    desktopEntry = desktopEntries.hmw or true;
     inherit sandbox;
     desktopName = "Horizon MW";
     inherit protonPath;
@@ -239,6 +256,7 @@ in
     winetricks = [
       "vcrun2022"
       "corefonts"
+      "dotnetdesktop8"
     ];
     env = {
       PROTON_USE_NTSYNC = "1";
@@ -281,6 +299,7 @@ in
 
   boiii = mkFarmClient {
     name = "boiii";
+    desktopEntry = desktopEntries.boiii or true;
     desktopName = "Call of Duty: Black Ops III (BOIII)";
     gameName = "Black Ops III";
     appid = "311210";
@@ -297,6 +316,7 @@ in
 
   cblauncher = mk {
     name = "cblauncher";
+    desktopEntry = desktopEntries.cblauncher or true;
     inherit sandbox;
     desktopName = "CB Launcher";
     inherit protonPath;
@@ -322,6 +342,7 @@ in
 
   iw5 = mkAlterware {
     name = "iw5";
+    desktopEntry = desktopEntries.iw5 or true;
     desktopName = "Call of Duty: Modern Warfare 3 (iw5-mod)";
     code = "iw5-mod";
     appid = "115300";
@@ -330,6 +351,7 @@ in
   };
   iw6 = mkAlterware {
     name = "iw6";
+    desktopEntry = desktopEntries.iw6 or true;
     desktopName = "Call of Duty: Ghosts (iw6-mod)";
     code = "iw6-mod";
     appid = "209160";
@@ -338,6 +360,7 @@ in
   };
   s1 = mkAlterware {
     name = "s1";
+    desktopEntry = desktopEntries.s1 or true;
     desktopName = "Call of Duty: Advanced Warfare (s1-mod)";
     code = "s1-mod";
     appid = "209650";
@@ -346,6 +369,7 @@ in
   };
   iw2 = mkAlterware {
     name = "iw2";
+    desktopEntry = desktopEntries.iw2 or true;
     desktopName = "Call of Duty 2 (iw2-mod)";
     code = "iw2-mod";
     appid = "2630";

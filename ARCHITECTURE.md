@@ -47,7 +47,7 @@ Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extra
 
 ### `mkFarmClient`
 
-For fetch-and-farm clients (t7x, h1, h2). It fetches a self-updating `.exe`, builds a symlink-farm of the owned game (so the retail install is never modified), optionally real-copies a hash-checked exe, and launches the client from the farm. Adding one is a one-liner:
+For fetch-and-farm clients (t7x, h1, h2, boiii). It fetches a self-updating `.exe`, builds a symlink-farm of the owned game (so the retail install is never modified), optionally real-copies a hash-checked exe, and launches the client from the farm. Adding one is a one-liner:
 
 ```nix
 h1 = mkFarmClient {
@@ -75,6 +75,9 @@ For the AlterWare family (iw5/iw6/s1/iw2). It runs the native `alterware-launche
 | `cod-t7x` | BO3 | `mkFarmClient` (real-copies `BlackOps3.exe`) |
 | `cod-h1` | Modern Warfare Remastered | `mkFarmClient` |
 | `cod-h2` | MW2 Campaign Remastered | `mkFarmClient` |
+| `cod-hmw` | Modern Warfare Remastered | `mkCodLauncher` (acquire hook fetches the HMW launcher) |
+| `cod-boiii` | BO3 | `mkFarmClient` |
+| `cod-cblauncher` | multi-title hub | `mkCodLauncher` (portable launcher, no farm) |
 | `cod-iw5`/`iw6`/`s1`/`iw2` | MW3-2011/Ghosts/AW/CoD2 | `mkAlterware` |
 
 ## Runtime: umu + Proton + sandbox
@@ -99,9 +102,12 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 - `plutonium.{enable, dotnet, extraWinetricks, extraArgs}`.
 - `t7x.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
 - `h1.{enable, mwrDir, extraArgs}`, `h2.{enable, mw2crDir, extraArgs}`.
+- `hmw.{enable, mwrDir, extraArgs}`, `boiii.{enable, blackOps3Dir, extraArgs}`, `cblauncher.enable`.
 - `alterware.{iw5,iw6,s1,iw2}.enable` (default-off, experimental).
+- `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
+- `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).
 
-`config` instantiates the clients (passing the option values into `clients.nix`) and adds the enabled launchers plus the three helpers (`cod-steamlink`, `cod-steam-add`, `cod-steam-native`, `cod-cleanops`) to `home.packages`.
+`config` instantiates the clients (passing the option values into `clients.nix`) and adds the enabled launchers plus each opted-in Steam helper (`cod-steam-add`, `cod-steam-native`, `cod-steamlink`, `cod-cleanops`) to `home.packages`. Per-client `.desktop` entries are controlled by `desktopEntries`.
 
 ## Steam integration
 

@@ -100,6 +100,10 @@
               hmw.enable = true;
               boiii.enable = true;
               cblauncher.enable = true;
+              steamAdd.enable = true;
+              steamNative.enable = true;
+              steamLink.enable = true;
+              cleanops.enable = true;
             };
           };
 

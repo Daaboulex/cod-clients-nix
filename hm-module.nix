@@ -17,10 +17,12 @@ in
       defaultText = lib.literalExpression ''"''${pkgs.proton-ge-bin.steamcompattool}"'';
       description = ''
         Proton the clients run under (a directory containing the `proton` script). The
-        default pins nixpkgs GE-Proton reproducibly. Set it to a ProtonPlus-managed
-        GE-Proton path to reuse that, or to the string "steam" to auto-detect the newest
-        Proton in your Steam compatibilitytools.d. The COD_PROTON=<path> environment
-        variable overrides it per launch, to change Proton on the fly.
+        default pins nixpkgs GE-Proton reproducibly. Set it to the string "steam" to
+        auto-detect the newest Proton in your Steam compatibilitytools.d (where ProtonPlus
+        installs its builds), or to a specific Proton path. Two runtime overrides need no
+        rebuild: write a Proton path or a compatibilitytools.d tool name to
+        $XDG_CONFIG_HOME/cod-clients/proton (persistent, and it applies to app-drawer
+        launches too), or set COD_PROTON=<path> for a single launch.
       '';
     };
 
@@ -32,6 +34,20 @@ in
         (Steam libraries, read-only), the client's own prefix/state (read-write),
         and GPU/audio/input/display/network -- no $HOME or unrelated files. Set the
         COD_SANDBOX=0 environment variable at runtime to bypass it for one launch.
+      '';
+    };
+
+    desktopEntries = lib.mkOption {
+      type = lib.types.attrsOf lib.types.bool;
+      default = { };
+      example = {
+        boiii = false;
+      };
+      description = ''
+        Per-client app-drawer control, keyed by client name (plutonium, t7x, h1, h2,
+        hmw, boiii, cblauncher, iw5, iw6, s1, iw2). A client absent from this set gets a
+        .desktop entry (shown in the app drawer); set it to false to install the launcher
+        without a drawer entry, for Steam-only or CLI-only use.
       '';
     };
 
@@ -100,8 +116,9 @@ in
         type = lib.types.str;
         default = "";
         description = ''
-          Path to the owned Modern Warfare 2 Campaign Remastered Steam install directory.
-          Empty = auto-detect from Steam's libraryfolders.vdf (app 1213210).
+          Path to the owned Modern Warfare 2 Campaign Remastered install directory.
+          MW2CR is not sold on Steam (PC release is Battle.net-only), so it cannot be
+          auto-detected -- set this explicitly to your installed game directory.
         '';
       };
       extraArgs = lib.mkOption {
@@ -155,6 +172,11 @@ in
     cblauncher = {
       enable = lib.mkEnableOption "the CB Launcher for community CoD clients -- experimental, default-off";
     };
+
+    steamAdd.enable = lib.mkEnableOption "the cod-steam-add helper (registers installed clients as non-Steam shortcuts running the sandboxed native launcher; Proton via per-shortcut launch options)";
+    steamNative.enable = lib.mkEnableOption "the cod-steam-native helper (registers each client's Windows .exe as a Steam shortcut under Steam's own Proton, so the Compatibility dropdown works; per-mode Plutonium + cover art)";
+    steamLink.enable = lib.mkEnableOption "the cod-steamlink helper (reversible exe-swap so a Steam game's Play button launches Plutonium and tracks hours)";
+    cleanops.enable = lib.mkEnableOption "the cod-cleanops helper (drops the CleanOps d3d11.dll into retail Black Ops III for Steam-launched multiplayer)";
   };
 
   config = lib.mkIf cfg.enable (
@@ -177,26 +199,26 @@ in
         boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
         boiiiExtraArgs = cfg.boiii.extraArgs;
         cblauncherExtraArgs = [ ];
+        inherit (cfg) desktopEntries;
       };
     in
     {
-      home.packages = [
-        clients.steamadd
-        clients.cleanops
-        clients.steamnative
-      ]
-      ++ lib.optional cfg.plutonium.enable clients.plutonium
-      ++ lib.optional cfg.plutonium.enable clients.steamlink
-      ++ lib.optional cfg.t7x.enable clients.t7x
-      ++ lib.optional cfg.h1.enable clients.h1
-      ++ lib.optional cfg.h2.enable clients.h2
-      ++ lib.optional cfg.alterware.iw5.enable clients.iw5
-      ++ lib.optional cfg.alterware.iw6.enable clients.iw6
-      ++ lib.optional cfg.alterware.s1.enable clients.s1
-      ++ lib.optional cfg.alterware.iw2.enable clients.iw2
-      ++ lib.optional cfg.hmw.enable clients.hmw
-      ++ lib.optional cfg.boiii.enable clients.boiii
-      ++ lib.optional cfg.cblauncher.enable clients.cblauncher;
+      home.packages =
+        lib.optional cfg.plutonium.enable clients.plutonium
+        ++ lib.optional cfg.t7x.enable clients.t7x
+        ++ lib.optional cfg.h1.enable clients.h1
+        ++ lib.optional cfg.h2.enable clients.h2
+        ++ lib.optional cfg.alterware.iw5.enable clients.iw5
+        ++ lib.optional cfg.alterware.iw6.enable clients.iw6
+        ++ lib.optional cfg.alterware.s1.enable clients.s1
+        ++ lib.optional cfg.alterware.iw2.enable clients.iw2
+        ++ lib.optional cfg.hmw.enable clients.hmw
+        ++ lib.optional cfg.boiii.enable clients.boiii
+        ++ lib.optional cfg.cblauncher.enable clients.cblauncher
+        ++ lib.optional cfg.steamAdd.enable clients.steamadd
+        ++ lib.optional cfg.steamNative.enable clients.steamnative
+        ++ lib.optional cfg.steamLink.enable clients.steamlink
+        ++ lib.optional cfg.cleanops.enable clients.cleanops;
     }
   );
 }

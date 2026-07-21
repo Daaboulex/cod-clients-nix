@@ -31,7 +31,8 @@ writeShellApplication {
       echo "usage: cod-steam-native [add|remove|list]"
       echo "Registers set-up cod-* clients as Steam shortcuts that run their .exe under"
       echo "Steam's Proton (dropdown works), reusing each client's prepared prefix. Plutonium"
-      echo "gets one shortcut per owned game+mode (launches straight in via plutonium://)."
+      echo "gets one shortcut per owned game+mode (best-effort plutonium:// direct-launch;"
+      echo "the launcher may still open to pick the mode)."
       echo "Sets your newest GE-Proton as the compat tool and fetches official cover art."
       echo "Close Steam before add/remove; run each cod-<client> once first so its prefix + exe exist."
       exit 0
@@ -60,6 +61,12 @@ writeShellApplication {
         done
       done < <(_steam_roots) | sort -V | tail -n1
     )"
+
+    if [ "$cmd" = add ] && [ -z "$compat" ]; then
+      echo "cod-steam-native: no GE-Proton found in any Steam compatibilitytools.d." >&2
+      echo "Steam needs a forced Proton to run these .exe shortcuts. Install GE-Proton (e.g. via ProtonPlus)," >&2
+      echo "or set each shortcut's Compatibility tool by hand in Steam after adding." >&2
+    fi
 
     shortcuts="[]"
     add_shortcut() {

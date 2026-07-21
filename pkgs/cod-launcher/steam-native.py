@@ -74,7 +74,7 @@ def load_shortcuts(path):
             with open(path, "rb") as handle:
                 data = vdf.binary_load(handle)
         except Exception as error:
-            sys.stderr.write("cod-steam-add: cannot parse %s (%s) -- left untouched.\n" % (path, error))
+            sys.stderr.write("cod-steam-native: cannot parse %s (%s) -- left untouched.\n" % (path, error))
             raise SystemExit(1)
     else:
         data = {}
@@ -135,7 +135,7 @@ def set_compat_tool(config_paths, appids, tool):
             with open(path, encoding="utf-8") as handle:
                 data = vdf.load(handle)
         except Exception as error:
-            sys.stderr.write("cod-steam-add: cannot parse %s (%s) -- skipping compat tool.\n" % (path, error))
+            sys.stderr.write("cod-steam-native: cannot parse %s (%s) -- skipping compat tool.\n" % (path, error))
             continue
         store = data
         for key in ("InstallConfigStore", "Software", "Valve", "Steam"):
@@ -216,10 +216,10 @@ def add(config_dirs, config_paths, shortcuts, tool):
             if sc.get("art_appid"):
                 fetch_art(config_dir, entry["appid"], sc["art_appid"])
         write_binary(path, data)
-        print("cod-steam-add: wrote %d shortcut(s) to %s" % (len(shortcuts), path))
+        print("cod-steam-native: wrote %d shortcut(s) to %s" % (len(shortcuts), path))
     set_compat_tool(config_paths, appids, tool)
     if tool:
-        print("cod-steam-add: set compat tool '%s' for %d app(s)" % (tool, len(appids)))
+        print("cod-steam-native: set compat tool '%s' for %d app(s)" % (tool, len(appids)))
 
 
 def remove(config_dirs, config_paths):
@@ -238,7 +238,7 @@ def remove(config_dirs, config_paths):
             kept[str(len(kept))] = entry
         data["shortcuts"] = kept
         write_binary(path, data)
-        print("cod-steam-add: removed cod shortcuts from %s" % path)
+        print("cod-steam-native: removed cod shortcuts from %s" % path)
     clear_compat_tool(config_paths, removed_appids)
 
 
@@ -259,7 +259,7 @@ def main():
     config_dirs = userdata_dirs(roots)
     config_paths = config_vdf_paths(roots)
     if not config_dirs:
-        sys.stderr.write("cod-steam-add: no Steam userdata/<id>/config found -- install Steam and log in once.\n")
+        sys.stderr.write("cod-steam-native: no Steam userdata/<id>/config found -- install Steam and log in once.\n")
         sys.exit(1)
     if command == "list":
         show(config_dirs)
@@ -268,7 +268,7 @@ def main():
         remove(config_dirs, config_paths)
     else:
         add(config_dirs, config_paths, payload["shortcuts"], payload.get("compat_tool", ""))
-    print("cod-steam-add: restart Steam to apply.")
+    print("cod-steam-native: restart Steam to apply.")
 
 
 if __name__ == "__main__":

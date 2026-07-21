@@ -26,6 +26,7 @@
   sandbox ? true,
   icon ? "input-gaming",
   categories ? [ "Game" ],
+  desktopEntry ? true,
 }:
 
 let
@@ -64,13 +65,30 @@ let
       export GAMEID="umu-cod-${name}"
       export STORE="none"
       protonPath_baked=${lib.escapeShellArg protonPath}
+      proton_pref_file="''${XDG_CONFIG_HOME:-$HOME/.config}/cod-clients/proton"
       resolve_proton() {
+        local root d pref
         if [ -n "''${COD_PROTON:-}" ]; then
           printf '%s\n' "$COD_PROTON"
           return 0
         fi
+        if [ -f "$proton_pref_file" ]; then
+          pref="$(head -n1 "$proton_pref_file")"
+          if [ -n "$pref" ]; then
+            if [ -f "$pref/proton" ]; then
+              printf '%s\n' "$pref"
+              return 0
+            fi
+            while IFS= read -r root; do
+              if [ -f "$root/compatibilitytools.d/$pref/proton" ]; then
+                printf '%s\n' "$root/compatibilitytools.d/$pref"
+                return 0
+              fi
+            done < <(_steam_roots)
+            echo "cod-${name}: preferred Proton '$pref' (from $proton_pref_file) not found; falling back" >&2
+          fi
+        fi
         if [ "$protonPath_baked" = steam ]; then
-          local root d
           while IFS= read -r root; do
             for d in "$root"/compatibilitytools.d/*/; do
               [ -f "''${d}proton" ] && printf '%s\n' "''${d%/}"
@@ -86,7 +104,7 @@ let
 
       if [ -z "$PROTONPATH" ] || [ ! -f "$PROTONPATH/proton" ]; then
         echo "cod-${name}: no valid Proton (a directory containing 'proton') at: '$PROTONPATH'" >&2
-        echo "Set protonPath to a Proton directory, or to \"steam\" to auto-detect from Steam's compatibilitytools.d, or set COD_PROTON=<path>." >&2
+        echo "Set protonPath to a Proton directory or \"steam\" (auto-detect newest in compatibilitytools.d), write a path or tool name to $proton_pref_file, or set COD_PROTON=<path>." >&2
         exit 1
       fi
       ${lib.optionalString (winetricks != [ ]) ''
@@ -106,8 +124,8 @@ let
       ${acquire}
       ${preLaunch}
 
-      if [ -z "$run" ]; then
-        echo "cod-${name}: could not resolve a client executable to run" >&2
+      if [ -z "$run" ] || [ ! -f "$run" ]; then
+        echo "cod-${name}: no client executable to run at: '$run'" >&2
         exit 1
       fi
 
@@ -126,8 +144,8 @@ symlinkJoin {
   name = "cod-${name}";
   paths = [
     launcher
-    desktop
-  ];
+  ]
+  ++ lib.optional desktopEntry desktop;
   meta = {
     description = "${desktopName} launcher (umu-launcher + Proton, bubblewrap-sandboxed) for NixOS";
     homepage = "https://github.com/Daaboulex/cod-clients-nix";
