@@ -125,13 +125,29 @@ let
           touch "$state/${marker}"
         fi
       ''}
-      if [ ! -f "$state/.steam-seeded" ]; then
-        echo "cod-${name}: seeding the Steam install markers boiii-lineage clients probe"
+      if [ ! -f "$state/.steam-seeded-v2" ]; then
+        echo "cod-${name}: seeding the Steam client into the prefix (boiii-lineage clients load steamclient64.dll)"
         COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Valve\Steam' /v InstallPath /t REG_SZ /d 'C:\Program Files (x86)\Steam' /f
         steam_dir="$WINEPREFIX/drive_c/Program Files (x86)/Steam"
         mkdir -p "$steam_dir"
-        [ -e "$steam_dir/steam.exe" ] || touch "$steam_dir/steam.exe"
-        touch "$state/.steam-seeded"
+        legacy=""
+        while IFS= read -r root; do
+          if [ -f "$root/legacycompat/steamclient64.dll" ]; then
+            legacy="$root/legacycompat"
+            break
+          fi
+        done < <(_steam_roots)
+        if [ -n "$legacy" ]; then
+          for dll in steamclient64.dll steamclient.dll GameOverlayRenderer64.dll Steam.dll; do
+            if [ -f "$legacy/$dll" ]; then cp -Lf "$legacy/$dll" "$steam_dir/"; fi
+          done
+          cp -Lf "$legacy/GameOverlayRenderer64.dll" "$steam_dir/gameoverlayrenderer64.dll" 2>/dev/null || true
+          cp -Lf "$legacy/SteamService.exe" "$steam_dir/steam.exe" 2>/dev/null || touch "$steam_dir/steam.exe"
+        else
+          echo "cod-${name}: no Steam client legacycompat found; boiii/t7x/BO3 need the Steam client installed for their steamclient64.dll" >&2
+          touch "$steam_dir/steam.exe"
+        fi
+        touch "$state/.steam-seeded-v2"
       fi
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then

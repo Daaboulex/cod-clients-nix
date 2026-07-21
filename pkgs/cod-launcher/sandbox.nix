@@ -27,6 +27,7 @@
       --ro-bind-try /run/opengl-driver-32 /run/opengl-driver-32
       --dev-bind-try /dev/dri /dev/dri
       --dev-bind-try /dev/input /dev/input
+      --dev-bind-try /dev/ntsync /dev/ntsync
       --ro-bind-try /run/udev /run/udev
       --share-net
       --bind "$state" "$state"
