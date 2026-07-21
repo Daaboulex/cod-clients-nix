@@ -103,6 +103,11 @@ in
           auto-detect from Steam's libraryfolders.vdf (app 393080).
         '';
       };
+      extraWinetricks = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra winetricks verbs added to the h1-mod prefix.";
+      };
       extraArgs = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
@@ -120,6 +125,11 @@ in
           MW2CR is not sold on Steam (PC release is Battle.net-only), so it cannot be
           auto-detected -- set this explicitly to your installed game directory.
         '';
+      };
+      extraWinetricks = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra winetricks verbs added to the h2-mod prefix.";
       };
       extraArgs = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -145,6 +155,11 @@ in
           auto-detect from Steam's libraryfolders.vdf (app 393080).
         '';
       };
+      extraWinetricks = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra winetricks verbs added to the Horizon MW prefix.";
+      };
       extraArgs = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
@@ -160,6 +175,14 @@ in
         description = ''
           Path to the owned Black Ops III Steam install directory. Empty =
           auto-detect from Steam's libraryfolders.vdf (app 311210).
+        '';
+      };
+      extraWinetricks = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          Extra winetricks verbs for the BOIII prefix, e.g. [ "mf" "mfplat" ] if you hit
+          the media-foundation codec error (same class as t7x).
         '';
       };
       extraArgs = lib.mkOption {
@@ -184,6 +207,29 @@ in
           the path). The launcher creates any missing listed directory on start.
         '';
       };
+      extraWinetricks = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [
+          "dotnet472"
+          "mf"
+          "mfplat"
+        ];
+        description = ''
+          Extra winetricks verbs for the CB Launcher prefix, added on top of its base set.
+          Use this for a sub-client's own dependency (e.g. dotnet472 for its Plutonium MW3,
+          or mf/mfplat for its BOIII codec path) -- the whole CB prefix is shared, so a verb
+          added here is available to every game it manages.
+        '';
+      };
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          Extra arguments passed to cb-launcher.exe, appended after the packaged
+          -portable and --in-process-gpu flags.
+        '';
+      };
     };
 
     steamAdd.enable = lib.mkEnableOption "the cod-steam-add helper (registers installed clients as non-Steam shortcuts running the sandboxed native launcher; Proton via per-shortcut launch options)";
@@ -204,37 +250,41 @@ in
         t7xExtraArgs = cfg.t7x.extraArgs;
         mwrDir = cfg.h1.mwrDir;
         h1ExtraArgs = cfg.h1.extraArgs;
+        h1ExtraWinetricks = cfg.h1.extraWinetricks;
         mw2crDir = cfg.h2.mw2crDir;
         h2ExtraArgs = cfg.h2.extraArgs;
+        h2ExtraWinetricks = cfg.h2.extraWinetricks;
         inherit (cfg) sandbox;
         hmwMwrDir = cfg.hmw.mwrDir;
         hmwExtraArgs = cfg.hmw.extraArgs;
+        hmwExtraWinetricks = cfg.hmw.extraWinetricks;
         boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
         boiiiExtraArgs = cfg.boiii.extraArgs;
-        cblauncherExtraArgs = [ ];
+        boiiiExtraWinetricks = cfg.boiii.extraWinetricks;
+        cblauncherExtraArgs = cfg.cblauncher.extraArgs;
+        cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
         inherit (cfg) desktopEntries;
       };
     in
     {
-      home.packages = [
-        clients.protonpicker
-      ]
-      ++ lib.optional cfg.plutonium.enable clients.plutonium
-      ++ lib.optional cfg.t7x.enable clients.t7x
-      ++ lib.optional cfg.h1.enable clients.h1
-      ++ lib.optional cfg.h2.enable clients.h2
-      ++ lib.optional cfg.alterware.iw5.enable clients.iw5
-      ++ lib.optional cfg.alterware.iw6.enable clients.iw6
-      ++ lib.optional cfg.alterware.s1.enable clients.s1
-      ++ lib.optional cfg.alterware.iw2.enable clients.iw2
-      ++ lib.optional cfg.hmw.enable clients.hmw
-      ++ lib.optional cfg.boiii.enable clients.boiii
-      ++ lib.optional cfg.cblauncher.enable clients.cblauncher
-      ++ lib.optional cfg.steamAdd.enable clients.steamadd
-      ++ lib.optional cfg.steamNative.enable clients.steamnative
-      ++ lib.optional cfg.steamLink.enable clients.steamlink
-      ++ lib.optional cfg.cleanops.enable clients.cleanops;
+      home.packages =
+        lib.optional (cfg.protonPath == "steam") clients.protonpicker
+        ++ lib.optional cfg.plutonium.enable clients.plutonium
+        ++ lib.optional cfg.t7x.enable clients.t7x
+        ++ lib.optional cfg.h1.enable clients.h1
+        ++ lib.optional cfg.h2.enable clients.h2
+        ++ lib.optional cfg.alterware.iw5.enable clients.iw5
+        ++ lib.optional cfg.alterware.iw6.enable clients.iw6
+        ++ lib.optional cfg.alterware.s1.enable clients.s1
+        ++ lib.optional cfg.alterware.iw2.enable clients.iw2
+        ++ lib.optional cfg.hmw.enable clients.hmw
+        ++ lib.optional cfg.boiii.enable clients.boiii
+        ++ lib.optional cfg.cblauncher.enable clients.cblauncher
+        ++ lib.optional cfg.steamAdd.enable clients.steamadd
+        ++ lib.optional cfg.steamNative.enable clients.steamnative
+        ++ lib.optional cfg.steamLink.enable clients.steamlink
+        ++ lib.optional cfg.cleanops.enable clients.cleanops;
     }
   );
 }

@@ -53,7 +53,7 @@ def load_shortcuts(path):
 
 
 def write_shortcuts(path, data):
-    if os.path.exists(path):
+    if os.path.exists(path) and not os.path.exists(path + ".cod-bak"):
         shutil.copy2(path, path + ".cod-bak")
     tmp = path + ".cod-tmp"
     with open(tmp, "wb") as handle:

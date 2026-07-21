@@ -16,14 +16,19 @@
   t7xExtraArgs ? [ ],
   mwrDir ? "",
   h1ExtraArgs ? [ ],
+  h1ExtraWinetricks ? [ ],
   mw2crDir ? "",
   h2ExtraArgs ? [ ],
+  h2ExtraWinetricks ? [ ],
   sandbox ? true,
   hmwMwrDir ? "",
   hmwExtraArgs ? [ ],
+  hmwExtraWinetricks ? [ ],
   boiiiBlackOps3Dir ? "",
   boiiiExtraArgs ? [ ],
+  boiiiExtraWinetricks ? [ ],
   cblauncherExtraArgs ? [ ],
+  cblauncherExtraWinetricks ? [ ],
   cblauncherGameDirs ? [ ],
   desktopEntries ? { },
 }:
@@ -105,6 +110,7 @@ let
       dirOverride ? "",
       extraArgs ? [ ],
       realCopyExe ? null,
+      winetricks ? [ ],
       desktopEntry ? true,
     }:
     mk {
@@ -116,6 +122,7 @@ let
         url
         exe
         extraArgs
+        winetricks
         desktopEntry
         ;
       env = { };
@@ -171,43 +178,18 @@ in
     extraArgs = plutoniumExtraArgs;
   };
 
-  t7x = mk {
+  t7x = mkFarmClient {
     name = "t7x";
     desktopEntry = desktopEntries.t7x or true;
-    inherit sandbox;
     desktopName = "Call of Duty: Black Ops III (t7x)";
+    gameName = "Black Ops III";
+    appid = "311210";
     url = "https://master.bo3.eu/t7x/t7x.exe";
     exe = "t7x.exe";
-    inherit protonPath;
+    dirOverride = blackOps3Dir;
+    realCopyExe = "BlackOps3.exe";
     winetricks = t7xExtraWinetricks;
-    env = { };
     extraArgs = t7xExtraArgs;
-    preLaunch = ''
-      bo3="${blackOps3Dir}"
-      if [ -z "$bo3" ]; then
-        bo3="$(resolve_steam_dir 311210 || true)"
-      fi
-      if [ -z "$bo3" ] || [ ! -d "$bo3" ]; then
-        echo "cod-t7x: Black Ops III not found (install it on Steam, app 311210) or set t7x.blackOps3Dir" >&2
-        exit 1
-      fi
-      gamedir="$bo3"
-
-      farm="$state/game"
-      if [ ! -f "$state/.farm-ready" ]; then
-        echo "cod-t7x: building the game farm from $bo3"
-        rm -rf "$farm"
-        mkdir -p "$farm"
-        cp -rs "$bo3/." "$farm/"
-        cp -f --remove-destination --no-preserve=mode "$bo3/BlackOps3.exe" "$farm/BlackOps3.exe"
-        rm -f "$farm/d3d11.dll"
-        touch "$state/.farm-ready"
-      fi
-      ln -sfn "$state/t7x.exe" "$farm/t7x.exe"
-
-      run="$farm/t7x.exe"
-      cd "$farm" || exit 1
-    '';
   };
 
   h1 = mkFarmClient {
@@ -219,6 +201,7 @@ in
     url = "https://github.com/auroramod/h1-mod/releases/latest/download/h1-mod.exe";
     exe = "h1-mod.exe";
     dirOverride = mwrDir;
+    winetricks = h1ExtraWinetricks;
     extraArgs = h1ExtraArgs;
   };
 
@@ -231,6 +214,7 @@ in
     url = "https://h2-mod.alicent.cat/data/h2-mod.exe";
     exe = "h2-mod.exe";
     dirOverride = mw2crDir;
+    winetricks = h2ExtraWinetricks;
     extraArgs = h2ExtraArgs;
   };
 
@@ -245,7 +229,8 @@ in
       "vcrun2022"
       "corefonts"
       "dotnetdesktop8"
-    ];
+    ]
+    ++ hmwExtraWinetricks;
     env = { };
     extraArgs = hmwExtraArgs;
     acquire = ''
@@ -291,6 +276,7 @@ in
     url = "https://github.com/Ezz-lol/boiii-free/releases/latest/download/boiii.exe";
     exe = "boiii.exe";
     dirOverride = boiiiBlackOps3Dir;
+    winetricks = boiiiExtraWinetricks;
     extraArgs = [
       "-nosteam"
       "-launch"
@@ -324,7 +310,8 @@ in
       "xact_x64"
       "xinput"
       "physx"
-    ];
+    ]
+    ++ cblauncherExtraWinetricks;
     env = { };
     extraArgs = [
       "-portable"

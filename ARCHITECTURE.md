@@ -101,8 +101,9 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 - `enable`, `sandbox` (default on), `protonPath`.
 - `plutonium.{enable, dotnet, extraWinetricks, extraArgs}`.
 - `t7x.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
-- `h1.{enable, mwrDir, extraArgs}`, `h2.{enable, mw2crDir, extraArgs}`.
-- `hmw.{enable, mwrDir, extraArgs}`, `boiii.{enable, blackOps3Dir, extraArgs}`, `cblauncher.enable`.
+- `h1.{enable, mwrDir, extraWinetricks, extraArgs}`, `h2.{enable, mw2crDir, extraWinetricks, extraArgs}`.
+- `hmw.{enable, mwrDir, extraWinetricks, extraArgs}`, `boiii.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
+- `cblauncher.{enable, gameDirs, extraWinetricks, extraArgs}`.
 - `alterware.{iw5,iw6,s1,iw2}.enable` (default-off, experimental).
 - `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
 - `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).

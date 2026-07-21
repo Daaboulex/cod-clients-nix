@@ -79,6 +79,18 @@ myModules.home.cod-clients = {
     extraWinetricks = [ ];               # e.g. [ "mf" "mfplat" ] for codec issues
     extraArgs = [ ];
   };
+  h1 = {                                 # experimental, default-off
+    enable = false;                      # h1-mod (Modern Warfare Remastered)
+    mwrDir = "";                         # empty = auto-detect from Steam (app 393080)
+    extraWinetricks = [ ];               # extra prefix verbs
+    extraArgs = [ ];
+  };
+  h2 = {                                 # experimental, default-off
+    enable = false;                      # h2-mod (MW2 Campaign Remastered, Battle.net-only)
+    mw2crDir = "";                       # required: MW2CR is not on Steam, set it explicitly
+    extraWinetricks = [ ];               # extra prefix verbs
+    extraArgs = [ ];
+  };
   alterware = {                          # experimental, default-off
     iw5.enable = false;                  # Modern Warfare 3 (2011)
     iw6.enable = false;                  # Ghosts
@@ -88,16 +100,20 @@ myModules.home.cod-clients = {
   hmw = {                                # experimental, default-off
     enable = false;                      # Horizon MW (MWR mod)
     mwrDir = "";                         # empty = auto-detect from Steam (app 393080)
+    extraWinetricks = [ ];               # extra prefix verbs
     extraArgs = [ ];
   };
   boiii = {                              # experimental, default-off
     enable = false;                      # BOIII client (BO3)
     blackOps3Dir = "";                   # empty = auto-detect from Steam (app 311210)
+    extraWinetricks = [ ];               # e.g. [ "mf" "mfplat" ] for the BO3 codec error
     extraArgs = [ ];
   };
   cblauncher = {                         # experimental, default-off
     enable = false;                      # CB Launcher hub
     gameDirs = [ ];                      # writable dirs it may manage games in (RW in sandbox); paste one into its UI
+    extraWinetricks = [ ];               # extra prefix verbs for a sub-client, e.g. [ "dotnet472" ] or [ "mf" "mfplat" ]
+    extraArgs = [ ];                     # extra cb-launcher.exe args (after -portable --in-process-gpu)
   };
   steamAdd.enable = false;               # cod-steam-add: non-Steam shortcuts -> sandboxed native launcher
   steamNative.enable = false;            # cod-steam-native: .exe shortcuts under Steam's Proton (dropdown)

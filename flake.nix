@@ -91,8 +91,11 @@
               enable = true;
               plutonium.enable = true;
               t7x.enable = true;
+              t7x.extraWinetricks = [ "mf" ];
               h1.enable = true;
+              h1.extraWinetricks = [ "mf" ];
               h2.enable = true;
+              h2.extraWinetricks = [ "mf" ];
               alterware = {
                 iw5.enable = true;
                 iw6.enable = true;
@@ -100,9 +103,13 @@
                 iw2.enable = true;
               };
               hmw.enable = true;
+              hmw.extraWinetricks = [ "mf" ];
               boiii.enable = true;
+              boiii.extraWinetricks = [ "mf" ];
               cblauncher.enable = true;
               cblauncher.gameDirs = [ "/tmp/cb-games" ];
+              cblauncher.extraWinetricks = [ "dotnet472" ];
+              cblauncher.extraArgs = [ "-someflag" ];
               steamAdd.enable = true;
               steamNative.enable = true;
               steamLink.enable = true;
