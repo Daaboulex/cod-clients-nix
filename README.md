@@ -28,6 +28,9 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 - **`cod-h1`** - Modern Warfare Remastered (Aurora h1-mod). Fetches the self-updating `h1-mod.exe` and runs it against a symlink-farm of your owned MWR install. Default-off, experimental.
 - **`cod-h2`** - MW2 Campaign Remastered (Aurora h2-mod). Self-updating `h2-mod.exe` against a symlink-farm of your owned MW2CR install. Default-off, experimental.
 - **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
+- **`cod-hmw`** - Horizon MW (Modern Warfare Remastered mod). Self-updating launcher that downloads the mod into a symlink-farm of your owned MWR install. Default-off, experimental.
+- **`cod-boiii`** - BOIII client (Black Ops III). Drop-in self-updating client that runs against a symlink-farm of your owned BO3 install. Default-off, experimental — DXVK rendering is untested on Linux (dedicated-server mode works under Wine).
+- **`cod-cblauncher`** - CB Launcher hub for community CoD clients (17 supported titles). Works with Steam-installed games. Default-off, experimental.
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 - **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
 - **`cod-cleanops`** - optional helper that drops the CleanOps `d3d11.dll` into your owned retail Black Ops III, so launching BO3 through Steam loads CleanOps (cheat-removal + P2P hosting). Set the printed `WINEDLLOVERRIDES` launch option; reversible (`--undo`).
@@ -50,6 +53,9 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 | `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
 | `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
 | `cod-iw2` | Call of Duty 2 | 2630 | AlterWare; experimental, default-off |
+| `cod-hmw` | MWR | 393080 | Horizon MW; farm + self-updating launcher; experimental, default-off |
+| `cod-boiii` | BO3 | 311210 | BOIII; farm + self-updating client; experimental, default-off |
+| `cod-cblauncher` | 17 CoD titles | - | CB Launcher hub; experimental, default-off |
 
 ## Home Manager Module
 
@@ -77,6 +83,19 @@ myModules.home.cod-clients = {
     iw6.enable = false;                  # Ghosts
     s1.enable = false;                   # Advanced Warfare
     iw2.enable = false;                  # Call of Duty 2
+  };
+  hmw = {                                # experimental, default-off
+    enable = false;                      # Horizon MW (MWR mod)
+    mwrDir = "";                         # empty = auto-detect from Steam (app 393080)
+    extraArgs = [ ];
+  };
+  boiii = {                              # experimental, default-off
+    enable = false;                      # BOIII client (BO3)
+    blackOps3Dir = "";                   # empty = auto-detect from Steam (app 311210)
+    extraArgs = [ ];
+  };
+  cblauncher = {                         # experimental, default-off
+    enable = false;                      # CB Launcher hub
   };
 };
 ```
@@ -144,6 +163,9 @@ Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.san
 - **t7x / BO3 is experimental on Linux**: upstream does not test Linux and there are reports of a GStreamer/Media-Foundation codec error under Proton with no confirmed fix. If you hit it, try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
 - **The AlterWare family is experimental**: its Linux launch is unverified end-to-end and the iw4x/iw2 client exe names are inferred. Enable per-game, own the base game, and expect to verify (and possibly adjust) on first run.
 - **Plutonium online play** needs a free Plutonium forum account and the latest revision (the client self-updates to it).
+- **Horizon MW** builds a farm of your owned MWR install and runs the official launcher from it; the launcher self-updates and downloads mod files into the farm on first run. Needs `dotnet8` and `vcrun2022` in the prefix (handled automatically).
+- **BOIII** is a community fork of the BOIII client. The DXVK rendering path is unverified on Linux; it may only work in dedicated-server mode under Wine. Report rendering issues to upstream.
+- **CB Launcher** is a launcher hub, not a single-game client. It runs under Proton and can use existing Steam-installed games. Do not use it to download games you do not own.
 
 <!-- BEGIN generated:installation -->
 ## Installation

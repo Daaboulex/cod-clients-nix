@@ -3,6 +3,7 @@
   callPackage,
   proton-ge-bin,
   alterware-launcher,
+  unzip,
 }:
 
 {
@@ -18,6 +19,11 @@
   mw2crDir ? "",
   h2ExtraArgs ? [ ],
   sandbox ? true,
+  hmwMwrDir ? "",
+  hmwExtraArgs ? [ ],
+  boiiiBlackOps3Dir ? "",
+  boiiiExtraArgs ? [ ],
+  cblauncherExtraArgs ? [ ],
 }:
 
 let
@@ -222,6 +228,91 @@ in
     exe = "h2-mod.exe";
     dirOverride = mw2crDir;
     extraArgs = h2ExtraArgs;
+  };
+
+  hmw = mk {
+    name = "hmw";
+    inherit sandbox;
+    desktopName = "Horizon MW";
+    inherit protonPath;
+    extraRuntimeInputs = [ unzip ];
+    winetricks = [
+      "vcrun2022"
+      "corefonts"
+    ];
+    env = {
+      PROTON_USE_NTSYNC = "1";
+      PROTON_USE_WOW64 = "1";
+    };
+    extraArgs = hmwExtraArgs;
+    acquire = ''
+      gd="${hmwMwrDir}"
+      if [ -z "$gd" ]; then
+        gd="$(resolve_steam_dir 393080 || true)"
+      fi
+      if [ -z "$gd" ] || [ ! -d "$gd" ]; then
+        echo "cod-hmw: Modern Warfare Remastered not found (install it on Steam, app 393080) or set hmw.mwrDir" >&2
+        exit 1
+      fi
+      gamedir="$gd"
+
+      farm="$state/game"
+      if [ ! -f "$state/.farm-ready" ]; then
+        echo "cod-hmw: building MWR game farm from $gd"
+        rm -rf "$farm"
+        mkdir -p "$farm"
+        cp -rs "$gd/." "$farm/"
+        touch "$state/.farm-ready"
+      fi
+
+      if [ ! -f "$state/HMW Launcher.exe" ]; then
+        echo "cod-hmw: fetching Horizon MW Launcher"
+        curl -fL --remove-on-error --output "$state/HMW_Launcher.zip" \
+          "https://ghost.cdn.horizonmw.org/launcher/HMW_Launcher.zip"
+        unzip -o "$state/HMW_Launcher.zip" -d "$state/"
+      fi
+      run="$state/HMW Launcher.exe"
+      cd "$farm" || exit 1
+    '';
+    preLaunch = ''
+      echo "cod-hmw: Horizon MW will download mod files into this game directory on first run."
+    '';
+  };
+
+  boiii = mkFarmClient {
+    name = "boiii";
+    desktopName = "Call of Duty: Black Ops III (BOIII)";
+    gameName = "Black Ops III";
+    appid = "311210";
+    url = "https://github.com/Ezz-lol/boiii-free/releases/latest/download/boiii.exe";
+    exe = "boiii.exe";
+    dirOverride = boiiiBlackOps3Dir;
+    extraArgs = [
+      "-nosteam"
+      "-launch"
+      "-nointro"
+    ]
+    ++ boiiiExtraArgs;
+  };
+
+  cblauncher = mk {
+    name = "cblauncher";
+    inherit sandbox;
+    desktopName = "CB Launcher";
+    inherit protonPath;
+    url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
+    exe = "cb-launcher.exe";
+    winetricks = [
+      "vcrun2005"
+      "vcrun2008"
+      "vcrun2012"
+      "vcrun2022"
+    ];
+    env = {
+      PROTON_USE_NTSYNC = "1";
+      PROTON_USE_WOW64 = "1";
+    };
+    extraArgs = [ "-portable" ] ++ cblauncherExtraArgs;
   };
 
   steamlink = steamlinkPkg;

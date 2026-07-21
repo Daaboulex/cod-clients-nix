@@ -47,6 +47,9 @@
           cod-iw6 = clients.iw6;
           cod-s1 = clients.s1;
           cod-iw2 = clients.iw2;
+          cod-hmw = clients.hmw;
+          cod-boiii = clients.boiii;
+          cod-cblauncher = clients.cblauncher;
         };
 
       perSystem =
@@ -73,6 +76,9 @@
           packages.cod-iw6 = pkgs.cod-iw6;
           packages.cod-s1 = pkgs.cod-s1;
           packages.cod-iw2 = pkgs.cod-iw2;
+          packages.cod-hmw = pkgs.cod-hmw;
+          packages.cod-boiii = pkgs.cod-boiii;
+          packages.cod-cblauncher = pkgs.cod-cblauncher;
           packages.default = pkgs.cod-plutonium;
 
           checks.module-eval-hm = inputs.std.lib.homeModuleCheck {
@@ -91,6 +97,9 @@
                 s1.enable = true;
                 iw2.enable = true;
               };
+              hmw.enable = true;
+              boiii.enable = true;
+              cblauncher.enable = true;
             };
           };
 

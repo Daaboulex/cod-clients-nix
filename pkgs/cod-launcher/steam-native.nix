@@ -94,6 +94,7 @@ writeShellApplication {
       add_shortcut "$name" "$state_root/$c/$rel" "STEAM_COMPAT_DATA_PATH=$state_root/$c %command%" "$art"
     }
     add_farm t7x "t7x: Black Ops III" "game/t7x.exe" 311210
+    add_farm boiii "BOIII: Black Ops III" "game/boiii.exe" 311210
     add_farm h1 "h1-mod: Modern Warfare Remastered" "game/h1-mod.exe" 393080
     add_farm h2 "h2-mod: MW2 Campaign Remastered" "game/h2-mod.exe" 1213210
 

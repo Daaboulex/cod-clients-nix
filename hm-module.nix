@@ -117,6 +117,44 @@ in
       s1.enable = lib.mkEnableOption "the s1-mod launcher (Advanced Warfare) -- experimental";
       iw2.enable = lib.mkEnableOption "the iw2-mod launcher (Call of Duty 2) -- experimental";
     };
+
+    hmw = {
+      enable = lib.mkEnableOption "the Horizon MW launcher (Modern Warfare Remastered mod) -- experimental, default-off";
+      mwrDir = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = ''
+          Path to the owned Modern Warfare Remastered Steam install directory. Empty =
+          auto-detect from Steam's libraryfolders.vdf (app 393080).
+        '';
+      };
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra arguments passed to Horizon MW Launcher.";
+      };
+    };
+
+    boiii = {
+      enable = lib.mkEnableOption "the BOIII client (Black Ops III) -- experimental, default-off";
+      blackOps3Dir = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = ''
+          Path to the owned Black Ops III Steam install directory. Empty =
+          auto-detect from Steam's libraryfolders.vdf (app 311210).
+        '';
+      };
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Extra arguments passed to boiii.exe.";
+      };
+    };
+
+    cblauncher = {
+      enable = lib.mkEnableOption "the CB Launcher for community CoD clients -- experimental, default-off";
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -134,6 +172,11 @@ in
         mw2crDir = cfg.h2.mw2crDir;
         h2ExtraArgs = cfg.h2.extraArgs;
         inherit (cfg) sandbox;
+        hmwMwrDir = cfg.hmw.mwrDir;
+        hmwExtraArgs = cfg.hmw.extraArgs;
+        boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
+        boiiiExtraArgs = cfg.boiii.extraArgs;
+        cblauncherExtraArgs = [ ];
       };
     in
     {
@@ -150,7 +193,10 @@ in
       ++ lib.optional cfg.alterware.iw5.enable clients.iw5
       ++ lib.optional cfg.alterware.iw6.enable clients.iw6
       ++ lib.optional cfg.alterware.s1.enable clients.s1
-      ++ lib.optional cfg.alterware.iw2.enable clients.iw2;
+      ++ lib.optional cfg.alterware.iw2.enable clients.iw2
+      ++ lib.optional cfg.hmw.enable clients.hmw
+      ++ lib.optional cfg.boiii.enable clients.boiii
+      ++ lib.optional cfg.cblauncher.enable clients.cblauncher;
     }
   );
 }

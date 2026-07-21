@@ -21,7 +21,10 @@
     "wine",
     "proton",
     "umu",
-    "gaming"
+    "gaming",
+    "horizon-mw",
+    "boiii",
+    "cb-launcher"
   ],
   "platforms": {
     "aarch64-linux": "Windows game clients under Proton/Wine; x86_64-only umu-launcher + proton-ge-bin"

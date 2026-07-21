@@ -60,10 +60,15 @@ writeShellApplication {
     }
     add_launcher plutonium "Plutonium"
     add_launcher t7x "Call of Duty: Black Ops III (t7x)"
+    add_launcher h1 "Call of Duty: Modern Warfare Remastered (h1-mod)"
+    add_launcher h2 "Call of Duty: MW2 Campaign Remastered (h2-mod)"
+    add_launcher hmw "Horizon MW"
+    add_launcher boiii "Call of Duty: Black Ops III (BOIII)"
     add_launcher iw5 "Call of Duty: Modern Warfare 3 (iw5-mod)"
     add_launcher iw6 "Call of Duty: Ghosts (iw6-mod)"
     add_launcher s1 "Call of Duty: Advanced Warfare (s1-mod)"
     add_launcher iw2 "Call of Duty 2 (iw2-mod)"
+    add_launcher cblauncher "CB Launcher"
 
     if [ "$cmd" = add ] && [ "$launchers_json" = "[]" ]; then
       echo "cod-steam-add: no cod-* launchers on PATH -- enable clients in the module first." >&2
