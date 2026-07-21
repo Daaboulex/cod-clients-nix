@@ -22,6 +22,7 @@ It is a consumer of the Nix Packaging Standard (`github:Daaboulex/nix-packaging-
 | `pkgs/cod-launcher/steam-add.{nix,py}` | `cod-steam-add` - native-launcher non-Steam shortcuts |
 | `pkgs/cod-launcher/steam-native.{nix,py}` | `cod-steam-native` - `.exe` shortcuts under Steam's Proton |
 | `pkgs/cod-launcher/cleanops.nix` | `cod-cleanops` - CleanOps DLL installer for retail BO3 |
+| `pkgs/cod-launcher/proton.nix` | `cod-proton` - Proton picker writing the runtime override files |
 | `pkgs/cod-launcher/*-test.py` | `runCommand` regression tests wired as flake checks |
 | `.github/update.json` | Repo metadata (description, topics, `upstream.type`, arch drops) |
 | `.github/workflows/*` | Synced byte-for-byte from the standard - do not hand-edit |
@@ -37,13 +38,13 @@ The base builder. Given a client spec it generates a launcher that, at run time:
 
 1. Sources the Steam resolver and the sandbox function.
 2. Creates the client's state dir at `~/.local/share/cod-clients/<name>`.
-3. Resolves Proton (`resolve_proton`: `COD_PROTON` env, then `protonPath = "steam"` auto-detect, else the baked default) and validates it points at a directory containing a `proton` script.
+3. Resolves Proton (`resolve_proton`: `COD_PROTON` env, then the per-client override file, then the global override file, then `protonPath = "steam"` auto-detect - skipping an aarch64 tool on x86_64 - else the baked default) and validates it points at a directory containing a `proton` script.
 4. On first run, installs the winetricks verbs into the umu prefix (marker-guarded, once).
 5. Fetches the self-updating client `.exe` from its official CDN (`curl -fL --remove-on-error`) if absent.
 6. Runs `acquire` / `preLaunch` hooks (per-client setup - farms, alterware-launcher, etc.).
 7. Launches: `cod_launch umu-run "$run" <args>`.
 
-Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extraArgs`, `acquire`, `preLaunch`, `protonPath`, `sandbox`.
+Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extraArgs`, `acquire`, `preLaunch`, `protonPath`, `sandbox`, `desktopEntry`.
 
 ### `mkFarmClient`
 
@@ -88,11 +89,17 @@ Every launch is wrapped in an outer bubblewrap (`cod_launch` in `sandbox.nix`): 
 
 The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak/Snap base dirs), `resolve_steam_dir <appid>` (follows moved/extra libraries via `libraryfolders.vdf` to the install dir), and `list_steam_libraries`.
 
-## Proton selection (three ways)
+## Proton selection
 
-- Pinned nixpkgs GE-Proton (default, reproducible).
-- `protonPath = "steam"` - auto-detect the newest Proton in your Steam `compatibilitytools.d`.
-- `COD_PROTON=<path> cod-<client>` - override per launch.
+`resolve_proton` walks this ladder, highest first; each override file holds a Proton path or a `compatibilitytools.d` tool name:
+
+1. `COD_PROTON=<path>` - env override for a single launch.
+2. `~/.config/cod-clients/<name>.proton` - per-client override file.
+3. `~/.config/cod-clients/proton` - global override file.
+4. `protonPath = "steam"` - auto-detect the newest Proton in Steam's `compatibilitytools.d` (an aarch64 tool is skipped on an x86_64 host, guarding against a wrongly downloaded arm64 GE-Proton).
+5. The baked `protonPath` default - pinned nixpkgs GE-Proton, reproducible.
+
+`cod-proton` (in `proton.nix`, installed by the module when `protonPath = "steam"`) is the picker UI for the override files: a KDE/GNOME dialog or numbered terminal menu of installed Protons that writes/clears them.
 
 ## The Home Manager module
 
@@ -108,7 +115,7 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 - `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
 - `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).
 
-`config` instantiates the clients (passing the option values into `clients.nix`) and adds the enabled launchers plus each opted-in Steam helper (`cod-steam-add`, `cod-steam-native`, `cod-steamlink`, `cod-cleanops`) to `home.packages`. Per-client `.desktop` entries are controlled by `desktopEntries`.
+`config` instantiates the clients (passing the option values into `clients.nix`) and adds the enabled launchers plus each opted-in Steam helper (`cod-steam-add`, `cod-steam-native`, `cod-steamlink`, `cod-cleanops`) to `home.packages`, plus `cod-proton` when `protonPath = "steam"`. Per-client `.desktop` entries are controlled by `desktopEntries`.
 
 ## Steam integration
 
@@ -141,8 +148,8 @@ Why it is robust: the launchers are `writeShellApplication` packages with no bui
 ## Adding a client
 
 1. Pick the builder: `mkFarmClient` (a self-updating `.exe` + owned game), `mkAlterware` (an alterware-launcher code), or `mkCodLauncher` directly (needs winetricks verbs, like Plutonium).
-2. Add the block to `clients.nix` (for a farm client it is the one-liner above) and, if it takes options, thread `dirOverride`/`extraArgs` through the function params.
-3. Add the option to `hm-module.nix` (`enable`, a `<game>Dir`, `extraArgs`), pass the values into the `clients` call, and add `++ lib.optional cfg.<name>.enable clients.<name>` to `home.packages`.
+2. Add the block to `clients.nix` (for a farm client it is the one-liner above) and, if it takes options, thread `dirOverride`/`winetricks`/`extraArgs` through the function params.
+3. Add the option to `hm-module.nix` (`enable`, a `<game>Dir`, `extraWinetricks`, `extraArgs`), pass the values into the `clients` call, and add `++ lib.optional cfg.<name>.enable clients.<name>` to `home.packages`.
 4. Add `cod-<name> = clients.<name>;` to `overlays.default` and `packages.cod-<name> = pkgs.cod-<name>;` in `flake.nix`, and `<name>.enable = true;` to the `module-eval-hm` config.
 5. Document it in `README.md` (intro bullet + clients table).
 6. `git add` the new files, `nix flake check`, commit, push.

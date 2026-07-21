@@ -9,7 +9,7 @@ let
 in
 {
   options.myModules.home.cod-clients = {
-    enable = lib.mkEnableOption "Call of Duty custom clients launcher (Plutonium + t7x) via umu + Proton";
+    enable = lib.mkEnableOption "the community Call of Duty client launchers (umu + Proton + bubblewrap)";
 
     protonPath = lib.mkOption {
       type = lib.types.str;
@@ -19,10 +19,13 @@ in
         Proton the clients run under (a directory containing the `proton` script). The
         default pins nixpkgs GE-Proton reproducibly. Set it to the string "steam" to
         auto-detect the newest Proton in your Steam compatibilitytools.d (where ProtonPlus
-        installs its builds), or to a specific Proton path. Two runtime overrides need no
-        rebuild: write a Proton path or a compatibilitytools.d tool name to
-        $XDG_CONFIG_HOME/cod-clients/proton (persistent, and it applies to app-drawer
-        launches too), or set COD_PROTON=<path> for a single launch.
+        installs its builds; an aarch64 build is skipped on x86_64), or to a specific
+        Proton path. Three runtime overrides need no rebuild, highest first:
+        COD_PROTON=<path> for a single launch; the per-client file
+        $XDG_CONFIG_HOME/cod-clients/<name>.proton; the global
+        $XDG_CONFIG_HOME/cod-clients/proton. Each file holds a Proton path or a
+        compatibilitytools.d tool name and applies to app-drawer launches too; the
+        cod-proton picker (installed when this is "steam") writes them for you.
       '';
     };
 

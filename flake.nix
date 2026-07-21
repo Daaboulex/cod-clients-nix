@@ -1,5 +1,5 @@
 {
-  description = "Call of Duty custom clients (Plutonium, t7x) packaged for NixOS - Home Manager launcher module";
+  description = "Community Call of Duty clients packaged for NixOS - Home Manager launcher module (umu + Proton + bubblewrap)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
