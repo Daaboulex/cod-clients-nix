@@ -35,6 +35,7 @@ let
   steamaddPkg = callPackage ./steam-add.nix { };
   cleanopsPkg = (callPackage ./cleanops.nix { }) { resolver = steamResolver; };
   steamnativePkg = callPackage ./steam-native.nix { };
+  protonpickerPkg = callPackage ./proton.nix { };
 
   plutoniumBaseVerbs = [
     "corefonts"
@@ -342,6 +343,7 @@ in
   steamadd = steamaddPkg;
   cleanops = cleanopsPkg;
   steamnative = steamnativePkg;
+  protonpicker = protonpickerPkg;
 
   iw5 = mkAlterware {
     name = "iw5";

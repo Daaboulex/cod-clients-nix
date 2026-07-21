@@ -217,22 +217,24 @@ in
       };
     in
     {
-      home.packages =
-        lib.optional cfg.plutonium.enable clients.plutonium
-        ++ lib.optional cfg.t7x.enable clients.t7x
-        ++ lib.optional cfg.h1.enable clients.h1
-        ++ lib.optional cfg.h2.enable clients.h2
-        ++ lib.optional cfg.alterware.iw5.enable clients.iw5
-        ++ lib.optional cfg.alterware.iw6.enable clients.iw6
-        ++ lib.optional cfg.alterware.s1.enable clients.s1
-        ++ lib.optional cfg.alterware.iw2.enable clients.iw2
-        ++ lib.optional cfg.hmw.enable clients.hmw
-        ++ lib.optional cfg.boiii.enable clients.boiii
-        ++ lib.optional cfg.cblauncher.enable clients.cblauncher
-        ++ lib.optional cfg.steamAdd.enable clients.steamadd
-        ++ lib.optional cfg.steamNative.enable clients.steamnative
-        ++ lib.optional cfg.steamLink.enable clients.steamlink
-        ++ lib.optional cfg.cleanops.enable clients.cleanops;
+      home.packages = [
+        clients.protonpicker
+      ]
+      ++ lib.optional cfg.plutonium.enable clients.plutonium
+      ++ lib.optional cfg.t7x.enable clients.t7x
+      ++ lib.optional cfg.h1.enable clients.h1
+      ++ lib.optional cfg.h2.enable clients.h2
+      ++ lib.optional cfg.alterware.iw5.enable clients.iw5
+      ++ lib.optional cfg.alterware.iw6.enable clients.iw6
+      ++ lib.optional cfg.alterware.s1.enable clients.s1
+      ++ lib.optional cfg.alterware.iw2.enable clients.iw2
+      ++ lib.optional cfg.hmw.enable clients.hmw
+      ++ lib.optional cfg.boiii.enable clients.boiii
+      ++ lib.optional cfg.cblauncher.enable clients.cblauncher
+      ++ lib.optional cfg.steamAdd.enable clients.steamadd
+      ++ lib.optional cfg.steamNative.enable clients.steamnative
+      ++ lib.optional cfg.steamLink.enable clients.steamlink
+      ++ lib.optional cfg.cleanops.enable clients.cleanops;
     }
   );
 }

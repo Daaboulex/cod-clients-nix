@@ -50,6 +50,7 @@
           cod-hmw = clients.hmw;
           cod-boiii = clients.boiii;
           cod-cblauncher = clients.cblauncher;
+          cod-proton = clients.protonpicker;
         };
 
       perSystem =
@@ -79,6 +80,7 @@
           packages.cod-hmw = pkgs.cod-hmw;
           packages.cod-boiii = pkgs.cod-boiii;
           packages.cod-cblauncher = pkgs.cod-cblauncher;
+          packages.cod-proton = pkgs.cod-proton;
           packages.default = pkgs.cod-plutonium;
 
           checks.module-eval-hm = inputs.std.lib.homeModuleCheck {
