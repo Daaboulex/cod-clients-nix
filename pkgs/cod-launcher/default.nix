@@ -125,6 +125,14 @@ let
           touch "$state/${marker}"
         fi
       ''}
+      if [ ! -f "$state/.steam-seeded" ]; then
+        echo "cod-${name}: seeding the Steam install markers boiii-lineage clients probe"
+        COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Valve\Steam' /v InstallPath /t REG_SZ /d 'C:\Program Files (x86)\Steam' /f
+        steam_dir="$WINEPREFIX/drive_c/Program Files (x86)/Steam"
+        mkdir -p "$steam_dir"
+        [ -e "$steam_dir/steam.exe" ] || touch "$steam_dir/steam.exe"
+        touch "$state/.steam-seeded"
+      fi
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then
           echo "cod-${name}: fetching the official client from ${url}"

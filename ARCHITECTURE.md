@@ -40,9 +40,10 @@ The base builder. Given a client spec it generates a launcher that, at run time:
 2. Creates the client's state dir at `~/.local/share/cod-clients/<name>`.
 3. Resolves Proton (`resolve_proton`: `COD_PROTON` env, then the per-client override file, then the global override file, then `protonPath = "steam"` auto-detect - skipping an aarch64 tool on x86_64 - else the baked default) and validates it points at a directory containing a `proton` script.
 4. On first run, installs the winetricks verbs into the umu prefix (marker-guarded, once).
-5. Fetches the self-updating client `.exe` from its official CDN (`curl -fL --remove-on-error`) if absent.
-6. Runs `acquire` / `preLaunch` hooks (per-client setup - farms, alterware-launcher, etc.).
-7. Launches: `cod_launch umu-run "$run" <args>`.
+5. Seeds the prefix's Steam install markers (marker-guarded, once): the `HKLM\Software\Wow6432Node\Valve\Steam` `InstallPath` registry value plus a `steam.exe` stub file at that path. boiii-lineage clients (BOIII, t7x, CB Launcher's BO3) fatally probe exactly these two things at startup; Proton prefixes ship the file but never the registry value.
+6. Fetches the self-updating client `.exe` from its official CDN (`curl -fL --remove-on-error`) if absent.
+7. Runs `acquire` / `preLaunch` hooks (per-client setup - farms, alterware-launcher, etc.).
+8. Launches: `cod_launch umu-run "$run" <args>`.
 
 Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extraArgs`, `acquire`, `preLaunch`, `protonPath`, `sandbox`, `desktopEntry`.
 

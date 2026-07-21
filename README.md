@@ -255,6 +255,7 @@ COD_PROTON=~/.steam/steam/compatibilitytools.d/GE-Proton10-34 cod-plutonium
 - **First launch seems to hang** - it is downloading the umu runtime and building the prefix (Plutonium's verb install takes several minutes). Run from a terminal to watch; it happens once per client.
 - **`no valid Proton ...`** - `protonPath` is not a directory containing a `proton` script. The default is fine; if you set it, point at a `.../GE-Proton*/` dir, use `protonPath = "steam"`, or `COD_PROTON=<path>`.
 - **A client works only with `COD_SANDBOX=0`** - the sandbox is missing a bind the game needs; `COD_SANDBOX=0 cod-<client>` is the interim bypass. Please report it.
+- **"Steam must be installed for the game to run"** (BOIII, t7x, CB Launcher's BO3) - the boiii-lineage startup probe wants the prefix's `HKLM\Software\Wow6432Node\Valve\Steam` `InstallPath` registry value plus a `steam.exe` file at that path; Proton creates the file but never the registry value. The launcher now seeds both into every prefix (marker-guarded), and an existing prefix gets seeded on its next launch automatically - no running Steam is ever needed.
 - **t7x: black screen or a "Media Feature Pack"/codec error** - the known GStreamer/Media-Foundation issue; try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
 - **Game not found** - detection reads Steam's `libraryfolders.vdf`; for an unusual install pass `t7x.blackOps3Dir = "/path"` or `cod-steamlink --dir /path`. See Store detection.
 - **Interrupted download** - fetches use `--remove-on-error`, so just re-run the launcher.
