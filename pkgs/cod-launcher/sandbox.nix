@@ -67,6 +67,13 @@
       bw+=(--bind-try "$gamedir_rw" "$gamedir_rw")
     fi
 
+    if [ -n "''${cod_rw_dirs:-}" ]; then
+      local rwd
+      while IFS= read -r rwd; do
+        [ -n "$rwd" ] && bw+=(--bind-try "$rwd" "$rwd")
+      done <<< "$cod_rw_dirs"
+    fi
+
     exec "''${bw[@]}" "$@"
   }
 ''

@@ -171,6 +171,19 @@ in
 
     cblauncher = {
       enable = lib.mkEnableOption "the CB Launcher for community CoD clients -- experimental, default-off";
+      gameDirs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "/home/you/Games/cod" ];
+        description = ''
+          Directories CB Launcher may download, patch, and manage games in, each bound
+          read-write in its sandbox. Default empty = fail closed (only its own state is
+          writable, so its game download/patch paths cannot run). List a writable
+          fresh-download folder and/or existing game install dirs; then paste the matching
+          path into CB Launcher's UI (its Browse button is disabled under Wine, so you type
+          the path). The launcher creates any missing listed directory on start.
+        '';
+      };
     };
 
     steamAdd.enable = lib.mkEnableOption "the cod-steam-add helper (registers installed clients as non-Steam shortcuts running the sandboxed native launcher; Proton via per-shortcut launch options)";
@@ -199,6 +212,7 @@ in
         boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
         boiiiExtraArgs = cfg.boiii.extraArgs;
         cblauncherExtraArgs = [ ];
+        cblauncherGameDirs = cfg.cblauncher.gameDirs;
         inherit (cfg) desktopEntries;
       };
     in

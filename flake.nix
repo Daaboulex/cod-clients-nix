@@ -100,6 +100,7 @@
               hmw.enable = true;
               boiii.enable = true;
               cblauncher.enable = true;
+              cblauncher.gameDirs = [ "/tmp/cb-games" ];
               steamAdd.enable = true;
               steamNative.enable = true;
               steamLink.enable = true;

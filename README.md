@@ -30,7 +30,7 @@ A Nix flake that launches community Call of Duty clients on Linux without hand-r
 - **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
 - **`cod-hmw`** - Horizon MW (Modern Warfare Remastered mod). Self-updating launcher that downloads the mod into a symlink-farm of your owned MWR install. Default-off, experimental.
 - **`cod-boiii`** - BOIII client (Black Ops III). Drop-in self-updating client that runs against a symlink-farm of your owned BO3 install. Default-off, experimental — DXVK rendering is untested on Linux (dedicated-server mode works under Wine).
-- **`cod-cblauncher`** - CB Launcher hub for community CoD clients (17 supported titles). Works with Steam-installed games. Default-off, experimental.
+- **`cod-cblauncher`** - CB Launcher hub that bundles ~17 community clients (Plutonium, BOIII, IW4x, CoD4x, IW6x, S1x, H1/H2-Mod, IW7-Mod, HorizonMW, Project BO4, stock CoD1/UO). It downloads and launches those itself into a folder you grant via `cblauncher.gameDirs`. Default-off, experimental.
 - **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
 - **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
 - **`cod-cleanops`** - optional helper that drops the CleanOps `d3d11.dll` into your owned retail Black Ops III, so launching BO3 through Steam loads CleanOps (cheat-removal + P2P hosting). Set the printed `WINEDLLOVERRIDES` launch option; reversible (`--undo`).
@@ -97,6 +97,7 @@ myModules.home.cod-clients = {
   };
   cblauncher = {                         # experimental, default-off
     enable = false;                      # CB Launcher hub
+    gameDirs = [ ];                      # writable dirs it may manage games in (RW in sandbox); paste one into its UI
   };
   steamAdd.enable = false;               # cod-steam-add: non-Steam shortcuts -> sandboxed native launcher
   steamNative.enable = false;            # cod-steam-native: .exe shortcuts under Steam's Proton (dropdown)
@@ -172,7 +173,7 @@ Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.san
 - **Plutonium online play** needs a free Plutonium forum account and the latest revision (the client self-updates to it).
 - **Horizon MW** builds a farm of your owned MWR install and runs the official launcher from it; the launcher self-updates and downloads mod files into the farm on first run. Needs the .NET 8 Desktop Runtime and VC++ 2022 in the prefix (installed automatically via the `dotnetdesktop8` and `vcrun2022` winetricks verbs).
 - **BOIII** is a community fork of the BOIII client. The DXVK rendering path is unverified on Linux; it may only work in dedicated-server mode under Wine. Report rendering issues to upstream.
-- **CB Launcher** is a launcher hub, not a single-game client. It runs under Proton and can use existing Steam-installed games. Do not use it to download games you do not own.
+- **CB Launcher** is a hub for many community clients, so it overlaps the individual `cod-*` clients and adds titles they do not cover (MW2 via IW4x, CoD4 via CoD4x, CoD1/UO, Infinite Warfare, BO4). It writes client and game files INTO the folder you point it at, so set `cblauncher.gameDirs` to a writable location and paste that path into its UI (its Browse button is disabled under Wine, so you type the path). It deletes a game dir's `d3d11.dll` before launch, so do not point it at a retail Black Ops III that `cod-cleanops` has patched.
 
 <!-- BEGIN generated:installation -->
 ## Installation

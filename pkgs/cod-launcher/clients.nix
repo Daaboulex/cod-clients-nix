@@ -24,6 +24,7 @@
   boiiiBlackOps3Dir ? "",
   boiiiExtraArgs ? [ ],
   cblauncherExtraArgs ? [ ],
+  cblauncherGameDirs ? [ ],
   desktopEntries ? { },
 }:
 
@@ -323,16 +324,34 @@ in
     url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
     exe = "cb-launcher.exe";
     winetricks = [
+      "corefonts"
       "vcrun2005"
       "vcrun2008"
+      "vcrun2010"
       "vcrun2012"
+      "vcrun2013"
       "vcrun2022"
+      "d3dcompiler_43"
+      "d3dcompiler_47"
+      "d3dx9"
+      "d3dx10"
+      "d3dx11_43"
+      "xact"
+      "xact_x64"
+      "xinput"
+      "physx"
     ];
     env = {
       PROTON_USE_NTSYNC = "1";
       PROTON_USE_WOW64 = "1";
     };
     extraArgs = [ "-portable" ] ++ cblauncherExtraArgs;
+    preLaunch = ''
+      cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" cblauncherGameDirs)}
+      while IFS= read -r d; do
+        [ -n "$d" ] && mkdir -p "$d"
+      done <<< "$cod_rw_dirs"
+    '';
   };
 
   steamlink = steamlinkPkg;

@@ -84,7 +84,7 @@ For the AlterWare family (iw5/iw6/s1/iw2). It runs the native `alterware-launche
 
 `umu-launcher` runs the Windows `.exe` under Proton, bringing its own Steam Linux Runtime (no Steam needed). The default Proton is the pinned nixpkgs `proton-ge-bin.steamcompattool` (its `out` is a 112-byte stub - always use `.steamcompattool`).
 
-Every launch is wrapped in an outer bubblewrap (`cod_launch` in `sandbox.nix`): it exposes `/nix/store` (ro), the Steam-library `steamapps` (ro), the client's own state/prefix (rw), GPU/audio/input/display sockets, the D-Bus session bus, and the network - and hides `$HOME` and everything else. `COD_SANDBOX=0` bypasses it for one launch. The verb install runs unsandboxed (`COD_SANDBOX=0`).
+Every launch is wrapped in an outer bubblewrap (`cod_launch` in `sandbox.nix`): it exposes `/nix/store` (ro), the Steam-library `steamapps` (ro), the client's own state/prefix (rw), GPU/audio/input/display sockets, the D-Bus session bus, and the network - and hides `$HOME` and everything else. `COD_SANDBOX=0` bypasses it for one launch. The verb install runs unsandboxed (`COD_SANDBOX=0`). A client that must write into game directories (CB Launcher patches installs in place) declares them via `cblauncher.gameDirs` -> the `cod_rw_dirs` bind list, each mounted read-write; the default is empty (fail closed).
 
 The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak/Snap base dirs), `resolve_steam_dir <appid>` (follows moved/extra libraries via `libraryfolders.vdf` to the install dir), and `list_steam_libraries`.
 
