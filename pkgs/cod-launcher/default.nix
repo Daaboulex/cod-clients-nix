@@ -120,8 +120,14 @@ let
       fi
       ${lib.optionalString (winetricks != [ ]) ''
         if [ ! -f "$state/${marker}" ]; then
-          echo "cod-${name}: first-run prefix setup via winetricks (${verbStr})"
-          COD_SANDBOX=0 umu-run winetricks -q ${verbStr}
+          verbs_missing=()
+          for verb in ${verbStr}; do
+            grep -qxF "$verb" "$WINEPREFIX/winetricks.log" 2>/dev/null || verbs_missing+=("$verb")
+          done
+          if [ "''${#verbs_missing[@]}" -gt 0 ]; then
+            echo "cod-${name}: prefix setup via winetricks (''${verbs_missing[*]})"
+            COD_SANDBOX=0 umu-run winetricks -q "''${verbs_missing[@]}"
+          fi
           touch "$state/${marker}"
         fi
       ''}
