@@ -26,7 +26,7 @@
       --ro-bind-try /run/opengl-driver /run/opengl-driver
       --ro-bind-try /run/opengl-driver-32 /run/opengl-driver-32
       --dev-bind-try /dev/dri /dev/dri
-      --dev-bind-try /dev/input /dev/input
+      --tmpfs /dev/input
       --dev-bind-try /dev/ntsync /dev/ntsync
       --ro-bind-try /run/udev /run/udev
       --share-net
@@ -38,6 +38,33 @@
     local dev
     for dev in /dev/nvidiactl /dev/nvidia-modeset /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidia0 /dev/nvidia1 /dev/nvidia2; do
       [ -e "$dev" ] && bw+=(--dev-bind-try "$dev" "$dev")
+    done
+
+    local bound_input=0 node syspath
+    for node in /dev/input/event* /dev/input/js* /dev/input/mouse*; do
+      [ -e "$node" ] || continue
+      syspath="$(readlink -f "/sys/class/input/$(basename "$node")" 2>/dev/null || true)"
+      case "$syspath" in
+        */devices/virtual/*) : ;;
+        *)
+          bw+=(--dev-bind-try "$node" "$node")
+          bound_input=1
+          ;;
+      esac
+    done
+    if [ "$bound_input" = 0 ]; then
+      bw+=(--dev-bind-try /dev/input /dev/input)
+    fi
+
+    local hid jsnode
+    for hid in /dev/hidraw*; do
+      [ -e "$hid" ] || continue
+      for jsnode in "/sys/class/hidraw/$(basename "$hid")/device"/input/input*/js*; do
+        if [ -e "$jsnode" ]; then
+          bw+=(--dev-bind-try "$hid" "$hid")
+          break
+        fi
+      done
     done
 
     local rd="''${XDG_RUNTIME_DIR:-}"

@@ -8,6 +8,7 @@
 
 {
   protonPath ? "${proton-ge-bin.steamcompattool}",
+  protonPaths ? { },
   plutoniumDotnet ? false,
   plutoniumExtraWinetricks ? [ ],
   plutoniumExtraArgs ? [ ],
@@ -85,9 +86,9 @@ let
         name
         desktopName
         sandbox
-        protonPath
         desktopEntry
         ;
+      protonPath = protonPaths.${name} or protonPath;
       extraRuntimeInputs = [ alterware-launcher ];
       extraArgs = modes;
       env = { };
@@ -127,13 +128,13 @@ let
         name
         desktopName
         sandbox
-        protonPath
         url
         exe
         extraArgs
         winetricks
         desktopEntry
         ;
+      protonPath = protonPaths.${name} or protonPath;
       env = { };
       preLaunch = ''
         gd="${dirOverride}"
@@ -180,7 +181,7 @@ in
     desktopName = "Plutonium";
     url = "https://cdn.plutonium.pw/updater/plutonium.exe";
     exe = "plutonium.exe";
-    inherit protonPath;
+    protonPath = protonPaths.plutonium or protonPath;
     winetricks =
       plutoniumBaseVerbs ++ lib.optional plutoniumDotnet "dotnet472" ++ plutoniumExtraWinetricks;
     env = lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; };
@@ -232,7 +233,7 @@ in
     desktopEntry = desktopEntries.hmw or true;
     inherit sandbox;
     desktopName = "Horizon MW";
-    inherit protonPath;
+    protonPath = protonPaths.hmw or protonPath;
     extraRuntimeInputs = [ unzip ];
     winetricks = [
       "vcrun2022"
@@ -299,7 +300,7 @@ in
     desktopEntry = desktopEntries.cblauncher or true;
     inherit sandbox;
     desktopName = "CB Launcher";
-    inherit protonPath;
+    protonPath = protonPaths.cblauncher or protonPath;
     url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
     exe = "cb-launcher.exe";
     winetricks = [

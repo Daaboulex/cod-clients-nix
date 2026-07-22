@@ -29,6 +29,25 @@ in
       '';
     };
 
+    protonPaths = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      example = lib.literalExpression ''
+        {
+          s1 = "''${pkgs.proton-ge.v10.steamcompattool}";
+          iw6 = "''${pkgs.proton-ge.v10.steamcompattool}";
+        }
+      '';
+      description = ''
+        Per-client Proton overrides, keyed by client name (plutonium, t7x, h1, h2,
+        hmw, boiii, cblauncher, iw5, iw6, s1, iw2). A client absent from this set uses
+        the global `protonPath`. Use it to run different clients on different wine
+        majors from one config -- e.g. CB Launcher on GE-Proton11 for the clients that
+        need wine 11 (BO3, Infinite Warfare) while the Arxan-protected s1/iw6 run on
+        GE-Proton10, which those clients require.
+      '';
+    };
+
     sandbox = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -313,7 +332,7 @@ in
   config = lib.mkIf cfg.enable (
     let
       clients = (pkgs.callPackage ./pkgs/cod-launcher/clients.nix { }) {
-        inherit (cfg) protonPath;
+        inherit (cfg) protonPath protonPaths;
         plutoniumDotnet = cfg.plutonium.dotnet;
         plutoniumExtraWinetricks = cfg.plutonium.extraWinetricks;
         plutoniumExtraArgs = cfg.plutonium.extraArgs;
