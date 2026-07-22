@@ -113,7 +113,7 @@ myModules.home.cod-clients = {
     enable = false;                      # CB Launcher hub
     gameDirs = [ ];                      # writable dirs it may manage games in (RW in sandbox); paste one into its UI
     extraWinetricks = [ ];               # extra prefix verbs for a sub-client, e.g. [ "dotnet472" ] or [ "mf" "mfplat" ]
-    extraArgs = [ ];                     # extra cb-launcher.exe args (after -portable --in-process-gpu)
+    extraArgs = [ ];                     # extra cb-launcher.exe args (after the packaged CEF flags)
   };
   steamAdd.enable = false;               # cod-steam-add: non-Steam shortcuts -> sandboxed native launcher
   steamNative.enable = false;            # cod-steam-native: .exe shortcuts under Steam's Proton (dropdown)
@@ -256,6 +256,7 @@ COD_PROTON=~/.steam/steam/compatibilitytools.d/GE-Proton10-34 cod-plutonium
 - **`no valid Proton ...`** - `protonPath` is not a directory containing a `proton` script. The default is fine; if you set it, point at a `.../GE-Proton*/` dir, use `protonPath = "steam"`, or `COD_PROTON=<path>`.
 - **A client works only with `COD_SANDBOX=0`** - the sandbox is missing a bind the game needs; `COD_SANDBOX=0 cod-<client>` is the interim bypass. Please report it.
 - **"Steam must be installed for the game to run", or BO3 says "launching" then nothing happens** (BOIII, t7x, CB Launcher's BO3) - the boiii-lineage clients gate on the prefix's `HKLM\Software\Wow6432Node\Valve\Steam` `InstallPath` registry value plus a `steam.exe` at that path, AND their `steam_proxy` loads `steamclient64.dll` from there to build a Steam context (a missing DLL makes it hang after the gate passes). The launcher seeds all of it into every prefix (marker-guarded, self-heals on the next launch): the registry value, and the real `steamclient64.dll` + `GameOverlayRenderer64.dll` + `steam.exe` copied from your installed Steam client's `legacycompat/` directory (the same source Proton uses). This needs the **Steam client installed** (never running) - a Steam-less host prints a clear message and only these clients are affected.
+- **CB Launcher dropdowns (language, etc.) do not appear** - CEF `<select>` popups are separate native windows Wine has historically failed to paint (WineHQ bug 33943). The launcher forces software compositing (`--disable-gpu --disable-gpu-compositing`, on top of `--in-process-gpu`), the standard CEF-under-Wine cure, which costs nothing for a launcher UI. If a dropdown still misbehaves, the popup usually exists but is unpainted: hover/sweep the mouse where the options would be, or use the arrow keys + Enter.
 - **t7x: black screen or a "Media Feature Pack"/codec error** - the known GStreamer/Media-Foundation issue; try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
 - **Game not found** - detection reads Steam's `libraryfolders.vdf`; for an unusual install pass `t7x.blackOps3Dir = "/path"` or `cod-steamlink --dir /path`. See Store detection.
 - **Interrupted download** - fetches use `--remove-on-error`, so just re-run the launcher.

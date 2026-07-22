@@ -316,6 +316,8 @@ in
     extraArgs = [
       "-portable"
       "--in-process-gpu"
+      "--disable-gpu"
+      "--disable-gpu-compositing"
     ]
     ++ cblauncherExtraArgs;
     preLaunch = ''
