@@ -61,6 +61,19 @@
       bw+=(--ro-bind-try "$sl/steamapps" "$sl/steamapps")
     done < <(list_steam_libraries)
 
+    while IFS= read -r sl; do
+      bw+=(
+        --ro-bind-try "$sl/linux64" "$sl/linux64"
+        --ro-bind-try "$sl/linux32" "$sl/linux32"
+        --ro-bind-try "$sl/ubuntu12_64" "$sl/ubuntu12_64"
+        --ro-bind-try "$sl/ubuntu12_32" "$sl/ubuntu12_32"
+      )
+    done < <(_steam_roots)
+    bw+=(
+      --ro-bind-try "$HOME/.steam/sdk64" "$HOME/.steam/sdk64"
+      --ro-bind-try "$HOME/.steam/sdk32" "$HOME/.steam/sdk32"
+    )
+
     if [ -n "''${gamedir:-}" ]; then
       bw+=(--ro-bind-try "$gamedir" "$gamedir")
     fi
