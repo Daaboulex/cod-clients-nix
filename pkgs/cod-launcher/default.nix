@@ -23,6 +23,7 @@
   protonPath ? "${proton-ge-bin.steamcompattool}",
   winetricks ? [ ],
   gameSettings ? { },
+  virtualDesktop ? { },
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
@@ -75,6 +76,23 @@ let
     ) gameSettings
   );
   dxvkConf = writeText "cod-${name}-dxvk.conf" dxvkSections;
+  resOk =
+    s:
+    if builtins.match "[0-9]+x[0-9]+" s == null then
+      throw "cod-${name}: invalid virtualDesktop resolution '${s}' (expected WIDTHxHEIGHT)"
+    else
+      s;
+  vdBody = lib.concatStrings (
+    [ "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n" ]
+    ++ lib.mapAttrsToList (exe: res: "\"${keyOk exe}\"=\"${resOk res}\"\n") virtualDesktop
+    ++ [ "\n" ]
+    ++ lib.mapAttrsToList (
+      exe: _:
+      "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk exe}\\Explorer]\n\"Desktop\"=\"${keyOk exe}\"\n\n"
+    ) virtualDesktop
+  );
+  vdHash = builtins.substring 0 12 (builtins.hashString "sha256" vdBody);
+  vdReg = writeText "cod-${name}-vdesktop.reg" ("Windows Registry Editor Version 5.00\n\n" + vdBody);
 
   launcher = writeShellApplication {
     name = "cod-${name}";
@@ -238,6 +256,13 @@ let
           ${lib.concatMapStrings (e: "printf '%s\\n' ${lib.escapeShellArg e}\n") managedExes}
         } > "$gs_marker"
       fi
+      ${lib.optionalString (virtualDesktop != { }) ''
+        if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != ${lib.escapeShellArg vdHash} ]; then
+          echo "cod-${name}: applying per-exe Wine virtual desktop (Wayland dropdown/cursor fix)"
+          COD_SANDBOX=0 umu-run regedit /S ${vdReg}
+          printf '%s\n' ${lib.escapeShellArg vdHash} > "$state/.vdesktop"
+        fi
+      ''}
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then
           echo "cod-${name}: fetching the official client from ${url}"

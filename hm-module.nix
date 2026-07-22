@@ -41,10 +41,11 @@ in
       description = ''
         Per-client Proton overrides, keyed by client name (plutonium, t7x, h1, h2,
         hmw, boiii, cblauncher, iw5, iw6, s1, iw2). A client absent from this set uses
-        the global `protonPath`. Use it to run different clients on different wine
-        majors from one config -- e.g. CB Launcher on GE-Proton11 for the clients that
-        need wine 11 (BO3, Infinite Warfare) while the Arxan-protected s1/iw6 run on
-        GE-Proton10, which those clients require.
+        the global `protonPath`. Each standalone client is its own umu session and
+        prefix, so different clients can run different wine majors from one config.
+        CB Launcher is one process tree: every game it spawns is a plain child
+        process inheriting the cblauncher entry, so a per-game Proton through CB
+        does not exist.
       '';
     };
 
@@ -321,6 +322,26 @@ in
           class, and the sandbox shape stay launcher-wide (one process tree).
         '';
       };
+      virtualDesktop = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {
+          "cb-launcher.exe" = "1920x1080";
+        };
+        example = {
+          "cb-launcher.exe" = "2560x1440";
+        };
+        description = ''
+          Wine virtual desktop for cb-launcher.exe, keyed exe -> WIDTHxHEIGHT. Wine
+          draws the launcher and every game it spawns inside one internal surface,
+          bypassing the compositor -- the fix for KDE Plasma 6 Wayland hiding
+          cb-launcher's CEF dropdown popups and for a game whose cursor escapes,
+          sticks, or crashes on focus loss. Because CB spawns games as child
+          processes in its own session, they inherit this desktop, so one entry
+          covers the launcher and all its games (they render at WIDTHxHEIGHT rather
+          than exclusive fullscreen). Set the resolution to your monitor's, or set
+          to { } to disable.
+        '';
+      };
     };
 
     steamAdd.enable = lib.mkEnableOption "the cod-steam-add helper (registers installed clients as non-Steam shortcuts running the sandboxed native launcher; Proton via per-shortcut launch options)";
@@ -360,6 +381,7 @@ in
         cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
         cblauncherGameSettings = cfg.cblauncher.gameSettings;
+        cblauncherVirtualDesktop = cfg.cblauncher.virtualDesktop;
         inherit (cfg) desktopEntries;
       };
     in

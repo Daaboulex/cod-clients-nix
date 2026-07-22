@@ -36,6 +36,7 @@
   cblauncherExtraWinetricks ? [ ],
   cblauncherGameDirs ? [ ],
   cblauncherGameSettings ? { },
+  cblauncherVirtualDesktop ? { },
   desktopEntries ? { },
 }:
 
@@ -323,6 +324,7 @@ in
     ]
     ++ cblauncherExtraWinetricks;
     gameSettings = cblauncherGameSettings;
+    virtualDesktop = cblauncherVirtualDesktop;
     env = { };
     extraArgs = [
       "-portable"
