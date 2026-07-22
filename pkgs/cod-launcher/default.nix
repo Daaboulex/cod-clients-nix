@@ -190,8 +190,8 @@ let
       ''}
       ${lib.optionalString (lib.any (v: lib.hasPrefix "dotnet" v) winetricks) ''
         if [ ! -f "$state/.netroot" ]; then
-          COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Microsoft\.NETFramework' /v InstallRoot /t REG_SZ /d 'C:\windows\Microsoft.NET\Framework64\' /f
-          COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Microsoft\.NETFramework' /v InstallRoot /t REG_SZ /d 'C:\windows\Microsoft.NET\Framework\' /f
+          COD_SANDBOX=0 umu-run reg add "HKLM\\Software\\Microsoft\\.NETFramework" /v InstallRoot /t REG_SZ /d "C:\\windows\\Microsoft.NET\\Framework64\\" /f
+          COD_SANDBOX=0 umu-run reg add "HKLM\\Software\\Wow6432Node\\Microsoft\\.NETFramework" /v InstallRoot /t REG_SZ /d "C:\\windows\\Microsoft.NET\\Framework\\" /f
           touch "$state/.netroot"
         fi
       ''}
