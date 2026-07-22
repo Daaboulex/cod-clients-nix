@@ -166,9 +166,33 @@ let
           done
           if [ "''${#verbs_missing[@]}" -gt 0 ]; then
             echo "cod-${name}: prefix setup via winetricks (''${verbs_missing[*]})"
-            COD_SANDBOX=0 umu-run winetricks -q "''${verbs_missing[@]}"
+            for verb in "''${verbs_missing[@]}"; do
+              if ! COD_SANDBOX=0 umu-run winetricks -q "$verb"; then
+                case "$verb" in
+                  dotnet*)
+                    if [ -d "$WINEPREFIX/drive_c/windows/Microsoft.NET/Framework64/v4.0.30319" ]; then
+                      echo "cod-${name}: $verb installer exited nonzero but the framework is on disk; continuing" >&2
+                    else
+                      echo "cod-${name}: $verb failed and no framework landed in the prefix" >&2
+                      exit 1
+                    fi
+                    ;;
+                  *)
+                    echo "cod-${name}: winetricks verb $verb failed" >&2
+                    exit 1
+                    ;;
+                esac
+              fi
+            done
           fi
           touch "$state/${marker}"
+        fi
+      ''}
+      ${lib.optionalString (lib.any (v: lib.hasPrefix "dotnet" v) winetricks) ''
+        if [ ! -f "$state/.netroot" ]; then
+          COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Microsoft\.NETFramework' /v InstallRoot /t REG_SZ /d 'C:\windows\Microsoft.NET\Framework64\' /f
+          COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Microsoft\.NETFramework' /v InstallRoot /t REG_SZ /d 'C:\windows\Microsoft.NET\Framework\' /f
+          touch "$state/.netroot"
         fi
       ''}
       if [ ! -f "$state/.steam-seeded-v2" ]; then
