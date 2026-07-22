@@ -141,12 +141,39 @@ in
       };
     };
 
-    alterware = {
-      iw5.enable = lib.mkEnableOption "the iw5-mod launcher (Modern Warfare 3, 2011) -- experimental";
-      iw6.enable = lib.mkEnableOption "the iw6-mod launcher (Ghosts) -- experimental";
-      s1.enable = lib.mkEnableOption "the s1-mod launcher (Advanced Warfare) -- experimental";
-      iw2.enable = lib.mkEnableOption "the iw2-mod launcher (Call of Duty 2) -- experimental";
-    };
+    alterware =
+      let
+        gameDirOption =
+          game: appid:
+          lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = ''
+              Path to an existing ${game} install directory (any source, e.g. a CB
+              Launcher download dir). Empty = auto-detect from Steam's
+              libraryfolders.vdf (app ${appid}). The alterware-launcher lays its
+              client files into this directory on each run.
+            '';
+          };
+      in
+      {
+        iw5 = {
+          enable = lib.mkEnableOption "the iw5-mod launcher (Modern Warfare 3, 2011) -- experimental";
+          gameDir = gameDirOption "Modern Warfare 3 (2011)" "115300";
+        };
+        iw6 = {
+          enable = lib.mkEnableOption "the iw6-mod launcher (Ghosts) -- experimental";
+          gameDir = gameDirOption "Ghosts" "209160";
+        };
+        s1 = {
+          enable = lib.mkEnableOption "the s1-mod launcher (Advanced Warfare) -- experimental";
+          gameDir = gameDirOption "Advanced Warfare" "209650";
+        };
+        iw2 = {
+          enable = lib.mkEnableOption "the iw2-mod launcher (Call of Duty 2) -- experimental";
+          gameDir = gameDirOption "Call of Duty 2" "2630";
+        };
+      };
 
     hmw = {
       enable = lib.mkEnableOption "the Horizon MW launcher (Modern Warfare Remastered mod) -- experimental, default-off";
@@ -264,6 +291,10 @@ in
         boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
         boiiiExtraArgs = cfg.boiii.extraArgs;
         boiiiExtraWinetricks = cfg.boiii.extraWinetricks;
+        iw5GameDir = cfg.alterware.iw5.gameDir;
+        iw6GameDir = cfg.alterware.iw6.gameDir;
+        s1GameDir = cfg.alterware.s1.gameDir;
+        iw2GameDir = cfg.alterware.iw2.gameDir;
         cblauncherExtraArgs = cfg.cblauncher.extraArgs;
         cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;

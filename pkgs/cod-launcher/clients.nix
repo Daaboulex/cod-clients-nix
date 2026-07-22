@@ -27,6 +27,10 @@
   boiiiBlackOps3Dir ? "",
   boiiiExtraArgs ? [ ],
   boiiiExtraWinetricks ? [ ],
+  iw5GameDir ? "",
+  iw6GameDir ? "",
+  s1GameDir ? "",
+  iw2GameDir ? "",
   cblauncherExtraArgs ? [ ],
   cblauncherExtraWinetricks ? [ ],
   cblauncherGameDirs ? [ ],
@@ -72,6 +76,7 @@ let
       appid,
       exe,
       modes ? [ ],
+      gameDir ? "",
       desktopEntry ? true,
     }:
     mk {
@@ -86,9 +91,12 @@ let
       extraArgs = modes;
       env = { };
       acquire = ''
-        gamedir="$(resolve_steam_dir ${appid} || true)"
+        gamedir="${gameDir}"
+        if [ -z "$gamedir" ]; then
+          gamedir="$(resolve_steam_dir ${appid} || true)"
+        fi
         if [ -z "$gamedir" ] || [ ! -d "$gamedir" ]; then
-          echo "cod-${name}: ${desktopName} base game not found (own + install it on Steam, app ${appid})" >&2
+          echo "cod-${name}: ${desktopName} base game not found (own + install it on Steam, app ${appid}, or set alterware.${name}.gameDir to an existing install)" >&2
           exit 1
         fi
         echo "cod-${name}: updating ${code} via alterware-launcher"
@@ -342,6 +350,7 @@ in
     appid = "115300";
     exe = "iw5-mod.exe";
     modes = [ "-multiplayer" ];
+    gameDir = iw5GameDir;
   };
   iw6 = mkAlterware {
     name = "iw6";
@@ -351,6 +360,7 @@ in
     appid = "209160";
     exe = "iw6-mod.exe";
     modes = [ "-multiplayer" ];
+    gameDir = iw6GameDir;
   };
   s1 = mkAlterware {
     name = "s1";
@@ -360,6 +370,7 @@ in
     appid = "209650";
     exe = "s1-mod.exe";
     modes = [ "-multiplayer" ];
+    gameDir = s1GameDir;
   };
   iw2 = mkAlterware {
     name = "iw2";
@@ -369,5 +380,6 @@ in
     appid = "2630";
     exe = "iw2-mod.exe";
     modes = [ ];
+    gameDir = iw2GameDir;
   };
 }
