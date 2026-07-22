@@ -260,6 +260,48 @@ in
           -portable and --in-process-gpu flags.
         '';
       };
+      gameSettings = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              registry = lib.mkOption {
+                type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+                default = { };
+                description = ''
+                  String values written under HKCU\Software\Wine\AppDefaults\<exe>\<subkey>,
+                  keyed subkey -> value name -> data. The "" subkey is the exe's root key
+                  (e.g. Version = "win7"); other Wine keys scope the same way (DllOverrides,
+                  "X11 Driver"). Applied via regedit when the settings change; exes removed
+                  from this option get their AppDefaults key deleted.
+                '';
+              };
+              dxvk = lib.mkOption {
+                type = lib.types.lines;
+                default = "";
+                description = "dxvk.conf options for this executable's config section.";
+              };
+            };
+          }
+        );
+        default = { };
+        example = lib.literalExpression ''
+          {
+            "iw5mp.exe" = {
+              registry."" .Version = "win7";
+              registry."X11 Driver".GrabFullscreen = "Y";
+              dxvk = "d3d9.maxFrameRate = 240";
+            };
+          }
+        '';
+        description = ''
+          Per-game settings inside the shared CB Launcher prefix, keyed by the
+          executable name as Wine sees it. Wine scopes AppDefaults registry
+          entries and DXVK scopes config-file sections per executable, so each
+          game CB launches can carry its own Windows version, DLL overrides,
+          mouse capture, and DXVK options. The Proton build, the ntsync/esync
+          class, and the sandbox shape stay launcher-wide (one process tree).
+        '';
+      };
     };
 
     steamAdd.enable = lib.mkEnableOption "the cod-steam-add helper (registers installed clients as non-Steam shortcuts running the sandboxed native launcher; Proton via per-shortcut launch options)";
@@ -298,6 +340,7 @@ in
         cblauncherExtraArgs = cfg.cblauncher.extraArgs;
         cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
+        cblauncherGameSettings = cfg.cblauncher.gameSettings;
         inherit (cfg) desktopEntries;
       };
     in

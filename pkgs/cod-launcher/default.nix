@@ -1,6 +1,7 @@
 {
   lib,
   writeShellApplication,
+  writeText,
   umu-launcher,
   proton-ge-bin,
   bubblewrap,
@@ -21,6 +22,7 @@
   extraRuntimeInputs ? [ ],
   protonPath ? "${proton-ge-bin.steamcompattool}",
   winetricks ? [ ],
+  gameSettings ? { },
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
@@ -38,6 +40,41 @@ let
     lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") env
   );
   argsStr = lib.escapeShellArgs extraArgs;
+
+  keyOk =
+    s:
+    if lib.hasInfix "[" s || lib.hasInfix "]" s || lib.hasInfix "\n" s || lib.hasInfix "\"" s then
+      throw "cod-${name}: invalid registry path segment: ${s}"
+    else
+      s;
+  regEsc = lib.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ];
+  managedExes = lib.attrNames (lib.filterAttrs (_: gs: (gs.registry or { }) != { }) gameSettings);
+  regBody = lib.concatStrings (
+    lib.mapAttrsToList (
+      gsExe: gs:
+      lib.optionalString ((gs.registry or { }) != { }) (
+        "[-HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk gsExe}]\n\n"
+        + lib.concatStrings (
+          lib.mapAttrsToList (
+            subkey: vals:
+            "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk gsExe}${
+              lib.optionalString (subkey != "") "\\${keyOk subkey}"
+            }]\n"
+            + lib.concatStrings (lib.mapAttrsToList (vn: vd: "\"${regEsc vn}\"=\"${regEsc vd}\"\n") vals)
+            + "\n"
+          ) gs.registry
+        )
+      )
+    ) gameSettings
+  );
+  gsHash = builtins.substring 0 12 (builtins.hashString "sha256" (builtins.toJSON gameSettings));
+  regFile = writeText "cod-${name}-gamesettings.reg" regBody;
+  dxvkSections = lib.concatStrings (
+    lib.mapAttrsToList (
+      gsExe: gs: lib.optionalString ((gs.dxvk or "") != "") "[${keyOk gsExe}]\n${gs.dxvk}\n"
+    ) gameSettings
+  );
+  dxvkConf = writeText "cod-${name}-dxvk.conf" dxvkSections;
 
   launcher = writeShellApplication {
     name = "cod-${name}";
@@ -112,6 +149,9 @@ let
       PROTONPATH="$(resolve_proton)"
       export PROTONPATH
       ${envExports}
+      ${lib.optionalString (dxvkSections != "") ''
+        export DXVK_CONFIG_FILE=${lib.escapeShellArg "${dxvkConf}"}
+      ''}
 
       if [ -z "$PROTONPATH" ] || [ ! -f "$PROTONPATH/proton" ]; then
         echo "cod-${name}: no valid Proton (a directory containing 'proton') at: '$PROTONPATH'" >&2
@@ -154,6 +194,25 @@ let
           touch "$steam_dir/steam.exe"
         fi
         touch "$state/.steam-seeded-v2"
+      fi
+      gs_marker="$state/.gamesettings"
+      if [ "$(head -n1 "$gs_marker" 2>/dev/null || true)" != "${gsHash}" ]; then
+        gs_old="$(tail -n +2 "$gs_marker" 2>/dev/null || true)"
+        if [ -n "$gs_old" ] || ${if regBody != "" then "true" else "false"}; then
+          {
+            printf 'Windows Registry Editor Version 5.00\n\n'
+            while IFS= read -r gs_exe; do
+              [ -n "$gs_exe" ] && printf '%s\n\n' "[-HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\$gs_exe]"
+            done <<< "$gs_old"
+            cat ${regFile}
+          } > "$state/gamesettings.reg"
+          echo "cod-${name}: applying per-game Wine settings"
+          COD_SANDBOX=0 umu-run regedit /S "$state/gamesettings.reg"
+        fi
+        {
+          printf '%s\n' ${lib.escapeShellArg gsHash}
+          ${lib.concatMapStrings (e: "printf '%s\\n' ${lib.escapeShellArg e}\n") managedExes}
+        } > "$gs_marker"
       fi
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then

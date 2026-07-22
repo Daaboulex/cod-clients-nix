@@ -111,8 +111,8 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 - `t7x.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
 - `h1.{enable, mwrDir, extraWinetricks, extraArgs}`, `h2.{enable, mw2crDir, extraWinetricks, extraArgs}`.
 - `hmw.{enable, mwrDir, extraWinetricks, extraArgs}`, `boiii.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
-- `cblauncher.{enable, gameDirs, extraWinetricks, extraArgs}`.
-- `alterware.{iw5,iw6,s1,iw2}.enable` (default-off, experimental).
+- `cblauncher.{enable, gameDirs, extraWinetricks, extraArgs, gameSettings}` - `gameSettings` is keyed by executable name and writes per-exe Wine AppDefaults registry entries plus per-exe dxvk.conf sections, so every game inside the shared CB prefix can carry its own Windows version, DLL overrides, mouse capture, and DXVK options; the Proton build, ntsync class, and sandbox stay launcher-wide.
+- `alterware.{iw5,iw6,s1,iw2}.{enable, gameDir}` (default-off, experimental; `gameDir` points at an existing install from any source, empty auto-detects from Steam).
 - `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
 - `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).
 

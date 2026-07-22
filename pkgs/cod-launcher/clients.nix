@@ -34,6 +34,7 @@
   cblauncherExtraArgs ? [ ],
   cblauncherExtraWinetricks ? [ ],
   cblauncherGameDirs ? [ ],
+  cblauncherGameSettings ? { },
   desktopEntries ? { },
 }:
 
@@ -320,6 +321,7 @@ in
       "physx"
     ]
     ++ cblauncherExtraWinetricks;
+    gameSettings = cblauncherGameSettings;
     env = { };
     extraArgs = [
       "-portable"
