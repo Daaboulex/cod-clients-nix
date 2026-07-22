@@ -329,6 +329,8 @@ in
       "--in-process-gpu"
       "--disable-gpu"
       "--disable-gpu-compositing"
+      "--disable-direct-composition"
+      "--disable-features=CalculateNativeWinOcclusion"
     ]
     ++ cblauncherExtraArgs;
     preLaunch = ''
