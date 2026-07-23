@@ -596,9 +596,9 @@ in
       assertions = lib.mapAttrsToList (exe: sub: {
         assertion =
           lib.hasSuffix ".exe" (lib.toLower exe)
-          && lib.hasPrefix "/" sub.gameDir
+          && (sub.gameDir == null || lib.hasPrefix "/" sub.gameDir)
           && lib.all (d: lib.hasPrefix "/" d) sub.extraGameDirs;
-        message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe, gameDir and every extraGameDirs entry must be absolute paths, and protonPath must be non-empty.";
+        message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe and any gameDir or extraGameDirs entry must be an absolute path.";
       }) cfg.cblauncher.subProton;
 
       home.packages =

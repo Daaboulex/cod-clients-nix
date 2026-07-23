@@ -116,6 +116,7 @@
                 gameDir = "/tmp/cb-games/probe";
                 env.PROTON_ENABLE_WAYLAND = "1";
               };
+              cblauncher.subProton."iw3mp.exe".protonPath = "/probe-proton";
               steamAdd.enable = true;
               steamNative.enable = true;
               steamLink.enable = true;
