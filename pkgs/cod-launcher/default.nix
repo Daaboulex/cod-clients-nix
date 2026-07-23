@@ -85,31 +85,21 @@ let
       throw "cod-${name}: invalid virtualDesktop resolution '${s}' (expected WIDTHxHEIGHT)"
     else
       s;
-  vdBody = lib.concatStrings (
-    [ "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n" ]
-    ++ lib.mapAttrsToList (exe: res: "\"${keyOk exe}\"=\"${resOk res}\"\n") virtualDesktop
-    ++ [ "\n" ]
-    ++ lib.mapAttrsToList (
-      exe: _:
-      "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk exe}\\Explorer]\n\"Desktop\"=\"${keyOk exe}\"\n\n"
-    ) virtualDesktop
+  vdName = "cod-${name}";
+  vdRes = resOk (lib.head (lib.attrValues virtualDesktop ++ [ "1920x1080" ]));
+  vdBody = lib.optionalString (virtualDesktop != { }) (
+    "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n\"Desktop\"=\"${vdName}\"\n\n"
+    + "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n\"${vdName}\"=\"${vdRes}\"\n"
   );
   vdHash = builtins.substring 0 12 (builtins.hashString "sha256" vdBody);
   vdReg = writeText "cod-${name}-vdesktop.reg" ("Windows Registry Editor Version 5.00\n\n" + vdBody);
-  vdOffBody = lib.concatStrings (
-    [ "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n" ]
-    ++ lib.mapAttrsToList (exe: _: "\"${keyOk exe}\"=-\n") virtualDesktop
-    ++ [ "\n" ]
-    ++ lib.mapAttrsToList (
-      exe: _:
-      "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk exe}\\Explorer]\n\"Desktop\"=-\n\n"
-    ) virtualDesktop
-  );
+  vdOffBody =
+    "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n\"Desktop\"=-\n\n"
+    + "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n\"${vdName}\"=-\n";
   vdOffReg = writeText "cod-${name}-vdesktop-off.reg" (
     "Windows Registry Editor Version 5.00\n\n" + vdOffBody
   );
 
-  subLogName = exe: lib.strings.sanitizeDerivationName exe;
   subPattern = exe: lib.replaceStrings [ "." ] [ "\\." ] exe;
 
   launcher = writeShellApplication {
@@ -352,7 +342,10 @@ let
                     cod_routed[$cod_pid]=1
                     echo "cod-${name}: rerouting ${exe} to its own Proton prefix"
                     read -r -a cod_argv <<< "$cod_args" || true
-                    setsid ${lib.escapeShellArg bin} "''${cod_argv[@]}" >> "$state/sub-${subLogName exe}.log" 2>&1 < /dev/null &
+                    cod_sub_bin=${lib.escapeShellArg bin}
+                    cod_sub_dir="''${XDG_DATA_HOME:-$HOME/.local/share}/cod-clients/''${cod_sub_bin##*/cod-}"
+                    mkdir -p "$cod_sub_dir"
+                    setsid "$cod_sub_bin" "''${cod_argv[@]}" >> "$cod_sub_dir/launch.log" 2>&1 < /dev/null &
                   done < <(pgrep -f ${lib.escapeShellArg (subPattern exe)} 2>/dev/null || true)
                 '') subWatch
               )}

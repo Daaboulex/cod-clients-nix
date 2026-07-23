@@ -339,18 +339,16 @@ in
           "cb-launcher.exe" = "2560x1440";
         };
         description = ''
-          Wine virtual desktop for cb-launcher.exe, keyed exe -> WIDTHxHEIGHT. Wine
-          draws the launcher and every game it spawns inside one internal surface,
-          bypassing the compositor -- the fix for KDE Plasma 6 Wayland hiding
-          cb-launcher's CEF dropdown popups and for a game whose cursor escapes,
-          sticks, or crashes on focus loss. Because CB spawns games as child
-          processes in its own session, they inherit this desktop, so one entry
-          covers the launcher and all its games (they render at WIDTHxHEIGHT rather
-          than exclusive fullscreen). Session-aware at launch: applied when running
-          under Wayland (where the compositor hides Wine popups), removed again on
-          a plain X11 session (where popups render natively) -- the same config is
-          correct on either. Set the resolution to your monitor's, or set to { }
-          to disable entirely.
+          Wine virtual desktop for the CB prefix. A non-empty set enables a
+          prefix-global desktop (the winecfg form Wine honors reliably) sized by
+          the first value's WIDTHxHEIGHT: the launcher and every game it spawns
+          render inside one Wine-managed surface, bypassing the compositor -- the
+          fix for KDE Plasma 6 Wayland hiding cb-launcher's CEF dropdown popups
+          and for cursor-escape and focus-loss crashes. Session-aware at launch:
+          applied under Wayland, removed again on plain X11, so one config is
+          correct on either. Games rerouted via subProton run in their own
+          prefixes and are not affected. Set the resolution to your monitor's, or
+          set to { } to disable entirely.
         '';
       };
       subProton = lib.mkOption {
