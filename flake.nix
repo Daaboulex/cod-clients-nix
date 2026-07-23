@@ -128,12 +128,9 @@
               cblauncherSubProton."probe.exe" = {
                 protonPath = "/probe-proton";
                 gameDir = "/probe-games";
-                winetricks = [ ];
-                extraArgs = [ ];
                 virtualDesktop = {
                   "probe.exe" = "1920x1080";
                 };
-                env = { };
               };
             }).cblauncher;
 

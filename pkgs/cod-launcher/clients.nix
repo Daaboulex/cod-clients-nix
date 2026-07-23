@@ -103,12 +103,14 @@ let
       desktopEntry = false;
       inherit sandbox;
       protonPath = sub.protonPath;
-      winetricks = if sub.winetricks == null then cbBaseVerbs else sub.winetricks;
-      virtualDesktop = sub.virtualDesktop;
-      env = sub.env;
-      extraArgs = sub.extraArgs;
+      winetricks = if (sub.winetricks or null) == null then cbBaseVerbs else sub.winetricks;
+      virtualDesktop = sub.virtualDesktop or { };
+      env = sub.env or { };
+      extraArgs = sub.extraArgs or [ ];
       preLaunch = ''
-        cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ sub.extraGameDirs))}
+        cod_rw_dirs=${
+          lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ (sub.extraGameDirs or [ ])))
+        }
         while IFS= read -r d; do
           [ -n "$d" ] && mkdir -p "$d"
         done <<< "$cod_rw_dirs"
