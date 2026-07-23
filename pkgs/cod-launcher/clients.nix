@@ -3,6 +3,7 @@
   callPackage,
   proton-ge-bin,
   alterware-launcher,
+  jq,
   unzip,
 }:
 
@@ -37,6 +38,7 @@
   cblauncherGameDirs ? [ ],
   cblauncherGameSettings ? { },
   cblauncherSubProton ? { },
+  cblauncherLaunchOptions ? { },
   cblauncherEnv ? { },
   plutoniumEnv ? { },
   t7xEnv ? { },
@@ -126,6 +128,17 @@ let
 
   subVerbsFor = exe: if exe == "plutonium.exe" then plutoniumSubVerbs else cbBaseVerbs;
 
+  subEnvFor =
+    exe:
+    if exe == "s1x.exe" then
+      {
+        PROTON_USE_WAYLAND = "1";
+        PROTON_USE_SDL = "1";
+        VKD3D_CONFIG = "descriptor_heap";
+      }
+    else
+      { };
+
   subSlug =
     exe: lib.toLower (lib.replaceStrings [ " " "." ] [ "-" "-" ] (lib.removeSuffix ".exe" exe));
 
@@ -136,9 +149,9 @@ let
       desktopName = "CB ${exe}";
       desktopEntry = false;
       inherit sandbox;
-      protonPath = sub.protonPath;
+      protonPath = if (sub.protonPath or null) == null then protonPath else sub.protonPath;
       winetricks = if (sub.winetricks or null) == null then subVerbsFor exe else sub.winetricks;
-      env = sub.env or { };
+      env = subEnvFor exe // (sub.env or { });
       extraArgs = sub.extraArgs or [ ];
       preLaunch = ''
         cod_rw_dirs=${
@@ -397,6 +410,7 @@ in
     url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
     exe = "cb-launcher.exe";
     winetricks = cbPrefixVerbs ++ cblauncherExtraWinetricks;
+    extraRuntimeInputs = [ jq ];
     gameSettings = cblauncherGameSettings;
     subWatch = lib.mapAttrs (_: p: lib.getExe p) cbsubs;
     env = cblauncherEnv;
@@ -410,6 +424,23 @@ in
     ]
     ++ cblauncherExtraArgs;
     preLaunch = ''
+      ${lib.optionalString (cblauncherLaunchOptions != { }) ''
+        cod_props="$state/cbservers/user/properties.json"
+        cod_lo=${
+          lib.escapeShellArg (
+            builtins.toJSON (
+              lib.mapAttrs' (g: v: lib.nameValuePair "${g}-launch-options" v) cblauncherLaunchOptions
+            )
+          )
+        }
+        mkdir -p "$state/cbservers/user"
+        if [ -s "$cod_props" ]; then
+          jq -S -s '.[0] * .[1]' "$cod_props" <(printf '%s' "$cod_lo") > "$cod_props.tmp"
+          mv "$cod_props.tmp" "$cod_props"
+        else
+          printf '%s' "$cod_lo" > "$cod_props"
+        fi
+      ''}
       cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" cblauncherGameDirs)}
       while IFS= read -r d; do
         [ -n "$d" ] && mkdir -p "$d"

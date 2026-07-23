@@ -182,6 +182,25 @@ Plutonium gets one shortcut per owned game+mode (Black Ops II Multiplayer, Zombi
 
 Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes only what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, and GPU/audio/input/display/network. It hides `$HOME` and every unrelated file, and nests inside umu's own Steam Runtime container. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
 
+## Game Notes
+
+Per-title behavior on Wayland desktops, from tested setups rather than folklore.
+The launcher seeds CB's per-game launch options (`launchOptions`), installs
+per-prefix winetricks, and applies per-exe environment defaults; anything listed
+as an in-game setting cannot be packaged and is set once in the game's menu.
+
+| Game | Packaged | In-game / notes |
+|---|---|---|
+| Advanced Warfare (s1x) | Rerouted prefix defaults to the Wayland recipe: `PROTON_USE_WAYLAND=1 PROTON_USE_SDL=1 VKD3D_CONFIG=descriptor_heap`; pair it with a Proton that implements the Wayland toggle (proton-cachyos) | Display mode Borderless avoids the exclusive-fullscreen freeze class |
+| Ghosts (iw6x) | `launchOptions.ghosts = "+set cl_bypassMouseInput 1"` seeds the menu-mouse fix | If menus still miss the cursor, run `vid_restart` in the console after the option applies; alt-tab stability needs the second display off while playing |
+| MW3 (iw5 via Plutonium) | none needed to launch | `vid_restart` in the console revives the menu mouse; Mouse Smoothing on and Vsync off correct the feel; keep mouse polling at or under 500 Hz |
+| Black Ops III (boiii) | steam client seeding is automatic | Use Borderless Fullscreen; exclusive fullscreen misbehaves on alt-tab |
+| CB Launcher dropdowns | not fixable client-side | KWin XWayland popup handling (KDE bug 516450), unfixed upstream |
+
+Raw-input starvation under XWayland (frozen or escaping cursors in this game
+family) is fixed upstream by wine 11.13's focus-gated raw input; Proton builds
+rebased on it retire the per-game workarounds above.
+
 ## Caveats
 
 - **You must own the games** on Steam. These launchers mod games you own; they do not provide the base game.

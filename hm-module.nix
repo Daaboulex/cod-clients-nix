@@ -367,13 +367,31 @@ in
           class, and the sandbox shape stay launcher-wide (one process tree).
         '';
       };
+      launchOptions = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {
+          ghosts = "+set cl_bypassMouseInput 1";
+        };
+        example = {
+          iw5 = "+vid_restart";
+        };
+        description = ''
+          Per-game launch options seeded into CB Launcher's properties.json
+          (<game>-launch-options keys) before each start -- the launcher UI has
+          no field for them under Wine. CB appends them to the game's command
+          line. The ghosts default routes mouse input past the raw-input path
+          that XWayland starves on Wayland desktops, which makes the menu
+          usable. Set a game's key to "" to seed nothing for it.
+        '';
+      };
       subProton = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule {
             options = {
               protonPath = lib.mkOption {
-                type = lib.types.str;
-                description = "Proton directory this game runs under, e.g. \"\${pkgs.proton-ge.v10.steamcompattool}\".";
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Proton directory this game runs under, e.g. \"\${pkgs.proton-ge.v10.steamcompattool}\"; null inherits the global protonPath.";
               };
               gameDir = lib.mkOption {
                 type = lib.types.str;
@@ -487,6 +505,7 @@ in
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
         cblauncherGameSettings = cfg.cblauncher.gameSettings;
         cblauncherSubProton = cfg.cblauncher.subProton;
+        cblauncherLaunchOptions = cfg.cblauncher.launchOptions;
         cblauncherEnv = cfg.cblauncher.env;
         inherit (cfg) desktopEntries;
       };
@@ -496,7 +515,6 @@ in
         assertion =
           lib.hasSuffix ".exe" (lib.toLower exe)
           && lib.hasPrefix "/" sub.gameDir
-          && sub.protonPath != ""
           && lib.all (d: lib.hasPrefix "/" d) sub.extraGameDirs;
         message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe, gameDir and every extraGameDirs entry must be absolute paths, and protonPath must be non-empty.";
       }) cfg.cblauncher.subProton;
