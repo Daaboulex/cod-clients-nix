@@ -31,7 +31,7 @@
       --ro-bind-try /run/udev /run/udev
       --share-net
       --bind "$state" "$state"
-      --setenv UMU_FOLDERS_PATH "$state/umu"
+      --bind "''${XDG_DATA_HOME:-$HOME/.local/share}/umu" "''${XDG_DATA_HOME:-$HOME/.local/share}/umu"
       --chdir "$PWD"
     )
 

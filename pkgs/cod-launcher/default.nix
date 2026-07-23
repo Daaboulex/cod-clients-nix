@@ -102,8 +102,12 @@ let
       export COD_SANDBOX="''${COD_SANDBOX:-${if sandbox then "1" else "0"}}"
 
       state="''${XDG_DATA_HOME:-$HOME/.local/share}/cod-clients/${name}"
-      mkdir -p "$state"
+      mkdir -p "$state" "''${XDG_DATA_HOME:-$HOME/.local/share}/umu"
       cd "$state"
+      if [ -d "$state/umu" ]; then
+        echo "cod-${name}: removing the per-client umu runtime copy (shared runtime is bound into the sandbox)"
+        rm -rf "$state/umu"
+      fi
       gamedir=""
       gamedir_rw=""
       run=""
