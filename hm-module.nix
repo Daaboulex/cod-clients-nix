@@ -330,29 +330,6 @@ in
           class, and the sandbox shape stay launcher-wide (one process tree).
         '';
       };
-      virtualDesktop = lib.mkOption {
-        type = lib.types.attrsOf lib.types.str;
-        default = {
-          "cb-launcher.exe" = "auto";
-        };
-        example = {
-          "cb-launcher.exe" = "2560x1440";
-        };
-        description = ''
-          Wine virtual desktop for the CB prefix. A non-empty set enables a
-          prefix-global desktop (the winecfg form Wine honors reliably) sized by
-          the first value -- "auto" reads the primary display's current resolution
-          at each launch (a changed screen applies on the next launch), or pin a
-          WIDTHxHEIGHT: the launcher and every game it spawns
-          render inside one Wine-managed surface, bypassing the compositor -- the
-          fix for KDE Plasma 6 Wayland hiding cb-launcher's CEF dropdown popups
-          and for cursor-escape and focus-loss crashes. Session-aware at launch:
-          applied under Wayland, removed again on plain X11, so one config is
-          correct on either. Games rerouted via subProton run in their own
-          prefixes and are not affected. Set the resolution to your monitor's, or
-          set to { } to disable entirely.
-        '';
-      };
       subProton = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule {
@@ -384,29 +361,10 @@ in
                 default = [ ];
                 description = "Arguments always passed to the game, before the ones CB supplied.";
               };
-              virtualDesktop = lib.mkOption {
-                type = lib.types.attrsOf lib.types.str;
-                default = { };
-                description = "Per-exe Wine virtual desktop inside this game's own prefix (exe -> WIDTHxHEIGHT).";
-              };
               env = lib.mkOption {
                 type = lib.types.attrsOf lib.types.str;
                 default = { };
-                description = "Environment for this game's Proton session, e.g. PROTON_ENABLE_WAYLAND = \"1\".";
-              };
-              gamescope = lib.mkOption {
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-                default = null;
-                example = [
-                  "-f"
-                  "--force-grab-cursor"
-                ];
-                description = ''
-                  Run this game inside a nested gamescope compositor with these
-                  arguments -- the community-standard container for cursor
-                  confinement and grab semantics on Wayland desktops. null runs
-                  the game directly.
-                '';
+                description = "Environment for this game's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
               };
             };
           }
@@ -473,7 +431,6 @@ in
         cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
         cblauncherGameSettings = cfg.cblauncher.gameSettings;
-        cblauncherVirtualDesktop = cfg.cblauncher.virtualDesktop;
         cblauncherSubProton = cfg.cblauncher.subProton;
         cblauncherEnv = cfg.cblauncher.env;
         inherit (cfg) desktopEntries;

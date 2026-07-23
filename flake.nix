@@ -128,9 +128,6 @@
               cblauncherSubProton."probe.exe" = {
                 protonPath = "/probe-proton";
                 gameDir = "/probe-games";
-                virtualDesktop = {
-                  "probe.exe" = "1920x1080";
-                };
               };
             }).cblauncher;
 

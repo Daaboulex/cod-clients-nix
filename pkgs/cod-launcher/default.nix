@@ -11,9 +11,6 @@
   icoutils,
   procps,
   util-linux,
-  wmctrl,
-  xprop,
-  xrandr,
   makeDesktopItem,
   symlinkJoin,
 }:
@@ -28,9 +25,7 @@
   protonPath ? "${proton-ge-bin.steamcompattool}",
   winetricks ? [ ],
   gameSettings ? { },
-  virtualDesktop ? { },
   subWatch ? { },
-  preCommand ? [ ],
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
@@ -83,24 +78,6 @@ let
     ) gameSettings
   );
   dxvkConf = writeText "cod-${name}-dxvk.conf" dxvkSections;
-  resOk =
-    s:
-    if builtins.match "[0-9]+x[0-9]+" s == null then
-      throw "cod-${name}: invalid virtualDesktop resolution '${s}' (expected WIDTHxHEIGHT)"
-    else
-      s;
-  vdName = "cod-${name}";
-  vdResBaked =
-    let
-      v = lib.head (lib.attrValues virtualDesktop ++ [ "auto" ]);
-    in
-    if v == "auto" then "" else resOk v;
-  vdOffBody =
-    "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n\"Desktop\"=-\n\n"
-    + "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n\"${vdName}\"=-\n";
-  vdOffReg = writeText "cod-${name}-vdesktop-off.reg" (
-    "Windows Registry Editor Version 5.00\n\n" + vdOffBody
-  );
 
   subPattern = exe: lib.replaceStrings [ "." ] [ "\\." ] exe;
 
@@ -117,11 +94,6 @@ let
     ++ lib.optionals (subWatch != { }) [
       procps
       util-linux
-    ]
-    ++ lib.optionals (virtualDesktop != { }) [
-      xprop
-      xrandr
-      wmctrl
     ]
     ++ extraRuntimeInputs;
     text = ''
@@ -275,44 +247,11 @@ let
           ${lib.concatMapStrings (e: "printf '%s\\n' ${lib.escapeShellArg e}\n") managedExes}
         } > "$gs_marker"
       fi
-      ${lib.optionalString (virtualDesktop != { }) ''
-                if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
-                  vd_res=${lib.escapeShellArg vdResBaked}
-                  if [ -z "$vd_res" ]; then
-                    vd_res="$(xprop -root _NET_WORKAREA 2>/dev/null | awk -F' = ' 'NF>1{split($2,a,", "); if (a[3]+0>0 && a[4]+0>0) printf "%dx%d", a[3], a[4]; exit}')"
-                  fi
-                  if [ -z "$vd_res" ]; then
-                    vd_res="$(xrandr --current 2>/dev/null | awk '/[0-9]x[0-9]+.*\*/{print $1; exit}')"
-                  fi
-                  case "$vd_res" in
-                    [0-9]*x[0-9]*) : ;;
-                    *) vd_res="1920x1080" ;;
-                  esac
-                  vd_want="on-$vd_res"
-                  cat > "$state/vdesktop-on.reg" <<EOF
-        Windows Registry Editor Version 5.00
-
-        [HKEY_CURRENT_USER\Software\Wine\Explorer]
-        "Desktop"="${vdName}"
-
-        [HKEY_CURRENT_USER\Software\Wine\Explorer\Desktops]
-        "${vdName}"="$vd_res"
-        EOF
-                  vd_reg="$state/vdesktop-on.reg"
-                else
-                  vd_want="off"
-                  vd_reg=${vdOffReg}
-                fi
-                if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != "$vd_want" ]; then
-                  echo "cod-${name}: syncing the Wine virtual desktop to this session type ($vd_want)"
-                  COD_SANDBOX=0 umu-run regedit /S "$vd_reg"
-                  printf '%s\n' "$vd_want" > "$state/.vdesktop"
-                fi
-                (
-                  sleep 8
-                  wmctrl -lx > "$state/windows.txt" 2>/dev/null || true
-                ) &
-      ''}
+      if [ -f "$state/.vdesktop" ]; then
+        printf 'Windows Registry Editor Version 5.00\n\n[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n"Desktop"=-\n' > "$state/vdesktop-off.reg"
+        COD_SANDBOX=0 umu-run regedit /S "$state/vdesktop-off.reg"
+        rm -f "$state/.vdesktop" "$state/vdesktop-on.reg" "$state/vdesktop-off.reg" "$state/windows.txt"
+      fi
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then
           echo "cod-${name}: fetching the official client from ${url}"
@@ -354,11 +293,11 @@ let
       ${
         if subWatch == { } then
           ''
-            cod_launch ${lib.escapeShellArgs preCommand} umu-run "$run" ${argsStr} "$@"
+            cod_launch umu-run "$run" ${argsStr} "$@"
           ''
         else
           ''
-            (cod_launch ${lib.escapeShellArgs preCommand} umu-run "$run" ${argsStr} "$@") &
+            (cod_launch umu-run "$run" ${argsStr} "$@") &
             cod_main=$!
             declare -A cod_routed
             while kill -0 "$cod_main" 2>/dev/null; do

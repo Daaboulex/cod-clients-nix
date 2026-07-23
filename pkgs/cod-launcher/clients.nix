@@ -3,7 +3,6 @@
   callPackage,
   proton-ge-bin,
   alterware-launcher,
-  gamescope,
   unzip,
 }:
 
@@ -37,7 +36,6 @@
   cblauncherExtraWinetricks ? [ ],
   cblauncherGameDirs ? [ ],
   cblauncherGameSettings ? { },
-  cblauncherVirtualDesktop ? { },
   cblauncherSubProton ? { },
   cblauncherEnv ? { },
   desktopEntries ? { },
@@ -93,6 +91,23 @@ let
     "physx"
   ];
 
+  cbPrefixVerbs = cbBaseVerbs ++ [
+    "dotnet472"
+    "msasn1"
+    "win10"
+    "grabfullscreen=y"
+  ];
+
+  plutoniumSubVerbs = cbBaseVerbs ++ [
+    "msasn1"
+    "vcrun2019"
+    "d3dx11_42"
+    "win10"
+    "grabfullscreen=y"
+  ];
+
+  subVerbsFor = exe: if exe == "plutonium.exe" then plutoniumSubVerbs else cbBaseVerbs;
+
   subSlug =
     exe: lib.toLower (lib.replaceStrings [ " " "." ] [ "-" "-" ] (lib.removeSuffix ".exe" exe));
 
@@ -104,15 +119,9 @@ let
       desktopEntry = false;
       inherit sandbox;
       protonPath = sub.protonPath;
-      winetricks = if (sub.winetricks or null) == null then cbBaseVerbs else sub.winetricks;
-      virtualDesktop = sub.virtualDesktop or { };
+      winetricks = if (sub.winetricks or null) == null then subVerbsFor exe else sub.winetricks;
       env = sub.env or { };
       extraArgs = sub.extraArgs or [ ];
-      preCommand =
-        if (sub.gamescope or null) == null then
-          [ ]
-        else
-          [ (lib.getExe gamescope) ] ++ sub.gamescope ++ [ "--" ];
       preLaunch = ''
         cod_rw_dirs=${
           lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ (sub.extraGameDirs or [ ])))
@@ -360,9 +369,8 @@ in
     protonPath = protonPaths.cblauncher or protonPath;
     url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
     exe = "cb-launcher.exe";
-    winetricks = cbBaseVerbs ++ cblauncherExtraWinetricks;
+    winetricks = cbPrefixVerbs ++ cblauncherExtraWinetricks;
     gameSettings = cblauncherGameSettings;
-    virtualDesktop = cblauncherVirtualDesktop;
     subWatch = lib.mapAttrs (_: p: lib.getExe p) cbsubs;
     env = cblauncherEnv;
     extraArgs = [
