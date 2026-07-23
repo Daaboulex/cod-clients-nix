@@ -333,7 +333,7 @@ in
       virtualDesktop = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = {
-          "cb-launcher.exe" = "1920x1080";
+          "cb-launcher.exe" = "auto";
         };
         example = {
           "cb-launcher.exe" = "2560x1440";
@@ -341,7 +341,9 @@ in
         description = ''
           Wine virtual desktop for the CB prefix. A non-empty set enables a
           prefix-global desktop (the winecfg form Wine honors reliably) sized by
-          the first value's WIDTHxHEIGHT: the launcher and every game it spawns
+          the first value -- "auto" reads the primary display's current resolution
+          at each launch (a changed screen applies on the next launch), or pin a
+          WIDTHxHEIGHT: the launcher and every game it spawns
           render inside one Wine-managed surface, bypassing the compositor -- the
           fix for KDE Plasma 6 Wayland hiding cb-launcher's CEF dropdown popups
           and for cursor-escape and focus-loss crashes. Session-aware at launch:
@@ -362,6 +364,15 @@ in
               gameDir = lib.mkOption {
                 type = lib.types.str;
                 description = "The CB-managed directory holding this game and its client exe (absolute path).";
+              };
+              extraGameDirs = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = ''
+                  Additional CB-managed game directories this exe must see (absolute
+                  paths), bound read-write into its sandbox -- e.g. the WaW/BO1/BO2
+                  directories for plutonium.exe, which serves several titles.
+                '';
               };
               winetricks = lib.mkOption {
                 type = lib.types.nullOr (lib.types.listOf lib.types.str);
@@ -457,8 +468,11 @@ in
     {
       assertions = lib.mapAttrsToList (exe: sub: {
         assertion =
-          lib.hasSuffix ".exe" (lib.toLower exe) && lib.hasPrefix "/" sub.gameDir && sub.protonPath != "";
-        message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe, gameDir must be an absolute path, and protonPath must be non-empty.";
+          lib.hasSuffix ".exe" (lib.toLower exe)
+          && lib.hasPrefix "/" sub.gameDir
+          && sub.protonPath != ""
+          && lib.all (d: lib.hasPrefix "/" d) sub.extraGameDirs;
+        message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe, gameDir and every extraGameDirs entry must be absolute paths, and protonPath must be non-empty.";
       }) cfg.cblauncher.subProton;
 
       home.packages =

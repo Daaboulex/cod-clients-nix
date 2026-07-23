@@ -11,6 +11,7 @@
   icoutils,
   procps,
   util-linux,
+  xorg,
   makeDesktopItem,
   symlinkJoin,
 }:
@@ -86,13 +87,11 @@ let
     else
       s;
   vdName = "cod-${name}";
-  vdRes = resOk (lib.head (lib.attrValues virtualDesktop ++ [ "1920x1080" ]));
-  vdBody = lib.optionalString (virtualDesktop != { }) (
-    "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n\"Desktop\"=\"${vdName}\"\n\n"
-    + "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n\"${vdName}\"=\"${vdRes}\"\n"
-  );
-  vdHash = builtins.substring 0 12 (builtins.hashString "sha256" vdBody);
-  vdReg = writeText "cod-${name}-vdesktop.reg" ("Windows Registry Editor Version 5.00\n\n" + vdBody);
+  vdResBaked =
+    let
+      v = lib.head (lib.attrValues virtualDesktop ++ [ "auto" ]);
+    in
+    if v == "auto" then "" else resOk v;
   vdOffBody =
     "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer]\n\"Desktop\"=-\n\n"
     + "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n\"${vdName}\"=-\n";
@@ -116,6 +115,7 @@ let
       procps
       util-linux
     ]
+    ++ lib.optional (virtualDesktop != { }) xorg.xrandr
     ++ extraRuntimeInputs;
     text = ''
       ${steamResolver}
@@ -269,18 +269,35 @@ let
         } > "$gs_marker"
       fi
       ${lib.optionalString (virtualDesktop != { }) ''
-        if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
-          vd_want="on-${vdHash}"
-          vd_reg=${vdReg}
-        else
-          vd_want="off-${vdHash}"
-          vd_reg=${vdOffReg}
-        fi
-        if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != "$vd_want" ]; then
-          echo "cod-${name}: syncing the Wine virtual desktop to this session type ($vd_want)"
-          COD_SANDBOX=0 umu-run regedit /S "$vd_reg"
-          printf '%s\n' "$vd_want" > "$state/.vdesktop"
-        fi
+                if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+                  vd_res=${lib.escapeShellArg vdResBaked}
+                  if [ -z "$vd_res" ]; then
+                    vd_res="$(xrandr --current 2>/dev/null | awk '/[0-9]x[0-9]+.*\*/{print $1; exit}')"
+                  fi
+                  case "$vd_res" in
+                    [0-9]*x[0-9]*) : ;;
+                    *) vd_res="1920x1080" ;;
+                  esac
+                  vd_want="on-$vd_res"
+                  cat > "$state/vdesktop-on.reg" <<EOF
+        Windows Registry Editor Version 5.00
+
+        [HKEY_CURRENT_USER\Software\Wine\Explorer]
+        "Desktop"="${vdName}"
+
+        [HKEY_CURRENT_USER\Software\Wine\Explorer\Desktops]
+        "${vdName}"="$vd_res"
+        EOF
+                  vd_reg="$state/vdesktop-on.reg"
+                else
+                  vd_want="off"
+                  vd_reg=${vdOffReg}
+                fi
+                if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != "$vd_want" ]; then
+                  echo "cod-${name}: syncing the Wine virtual desktop to this session type ($vd_want)"
+                  COD_SANDBOX=0 umu-run regedit /S "$vd_reg"
+                  printf '%s\n' "$vd_want" > "$state/.vdesktop"
+                fi
       ''}
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then

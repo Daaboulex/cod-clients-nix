@@ -108,6 +108,10 @@ let
       env = sub.env;
       extraArgs = sub.extraArgs;
       preLaunch = ''
+        cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ sub.extraGameDirs))}
+        while IFS= read -r d; do
+          [ -n "$d" ] && mkdir -p "$d"
+        done <<< "$cod_rw_dirs"
         gamedir_rw=${lib.escapeShellArg sub.gameDir}
         run=${lib.escapeShellArg "${sub.gameDir}/${exe}"}
         cd "$gamedir_rw"
