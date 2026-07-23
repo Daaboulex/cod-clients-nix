@@ -11,6 +11,7 @@
   icoutils,
   procps,
   util-linux,
+  wmctrl,
   xprop,
   xrandr,
   makeDesktopItem,
@@ -29,6 +30,7 @@
   gameSettings ? { },
   virtualDesktop ? { },
   subWatch ? { },
+  preCommand ? [ ],
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
@@ -119,6 +121,7 @@ let
     ++ lib.optionals (virtualDesktop != { }) [
       xprop
       xrandr
+      wmctrl
     ]
     ++ extraRuntimeInputs;
     text = ''
@@ -305,6 +308,10 @@ let
                   COD_SANDBOX=0 umu-run regedit /S "$vd_reg"
                   printf '%s\n' "$vd_want" > "$state/.vdesktop"
                 fi
+                (
+                  sleep 8
+                  wmctrl -lx > "$state/windows.txt" 2>/dev/null || true
+                ) &
       ''}
       ${lib.optionalString (url != "") ''
         if [ ! -f "$state/${exe}" ]; then
@@ -347,11 +354,11 @@ let
       ${
         if subWatch == { } then
           ''
-            cod_launch umu-run "$run" ${argsStr} "$@"
+            cod_launch ${lib.escapeShellArgs preCommand} umu-run "$run" ${argsStr} "$@"
           ''
         else
           ''
-            (cod_launch umu-run "$run" ${argsStr} "$@") &
+            (cod_launch ${lib.escapeShellArgs preCommand} umu-run "$run" ${argsStr} "$@") &
             cod_main=$!
             declare -A cod_routed
             while kill -0 "$cod_main" 2>/dev/null; do

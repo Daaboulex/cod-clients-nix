@@ -394,6 +394,20 @@ in
                 default = { };
                 description = "Environment for this game's Proton session, e.g. PROTON_ENABLE_WAYLAND = \"1\".";
               };
+              gamescope = lib.mkOption {
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+                default = null;
+                example = [
+                  "-f"
+                  "--force-grab-cursor"
+                ];
+                description = ''
+                  Run this game inside a nested gamescope compositor with these
+                  arguments -- the community-standard container for cursor
+                  confinement and grab semantics on Wayland desktops. null runs
+                  the game directly.
+                '';
+              };
             };
           }
         );

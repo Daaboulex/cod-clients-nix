@@ -3,6 +3,7 @@
   callPackage,
   proton-ge-bin,
   alterware-launcher,
+  gamescope,
   unzip,
 }:
 
@@ -107,6 +108,11 @@ let
       virtualDesktop = sub.virtualDesktop or { };
       env = sub.env or { };
       extraArgs = sub.extraArgs or [ ];
+      preCommand =
+        if (sub.gamescope or null) == null then
+          [ ]
+        else
+          [ (lib.getExe gamescope) ] ++ sub.gamescope ++ [ "--" ];
       preLaunch = ''
         cod_rw_dirs=${
           lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ (sub.extraGameDirs or [ ])))
