@@ -11,7 +11,7 @@
   icoutils,
   procps,
   util-linux,
-  xorg,
+  xrandr,
   makeDesktopItem,
   symlinkJoin,
 }:
@@ -115,7 +115,7 @@ let
       procps
       util-linux
     ]
-    ++ lib.optional (virtualDesktop != { }) xorg.xrandr
+    ++ lib.optional (virtualDesktop != { }) xrandr
     ++ extraRuntimeInputs;
     text = ''
       ${steamResolver}
