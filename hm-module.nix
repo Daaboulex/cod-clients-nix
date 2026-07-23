@@ -89,6 +89,11 @@ in
         default = [ ];
         description = "Extra arguments passed to plutonium.exe (advanced/LAN use).";
       };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
+      };
     };
 
     t7x = {
@@ -114,6 +119,11 @@ in
         default = [ ];
         description = "Extra arguments passed to t7x.exe.";
       };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
+      };
     };
 
     h1 = {
@@ -135,6 +145,11 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = "Extra arguments passed to h1-mod.exe.";
+      };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
       };
     };
 
@@ -159,6 +174,11 @@ in
         default = [ ];
         description = "Extra arguments passed to h2-mod.exe.";
       };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
+      };
     };
 
     alterware =
@@ -175,24 +195,31 @@ in
               client files into this directory on each run.
             '';
           };
+        clientOptions = game: appid: exe: {
+          enable = lib.mkEnableOption "the ${exe} launcher (${game}) -- experimental";
+          gameDir = gameDirOption game appid;
+          extraWinetricks = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Winetricks verbs installed into this client's own prefix.";
+          };
+          extraArgs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Extra arguments passed to ${exe}.";
+          };
+          env = lib.mkOption {
+            type = lib.types.attrsOf lib.types.str;
+            default = { };
+            description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
+          };
+        };
       in
       {
-        iw5 = {
-          enable = lib.mkEnableOption "the iw5-mod launcher (Modern Warfare 3, 2011) -- experimental";
-          gameDir = gameDirOption "Modern Warfare 3 (2011)" "115300";
-        };
-        iw6 = {
-          enable = lib.mkEnableOption "the iw6-mod launcher (Ghosts) -- experimental";
-          gameDir = gameDirOption "Ghosts" "209160";
-        };
-        s1 = {
-          enable = lib.mkEnableOption "the s1-mod launcher (Advanced Warfare) -- experimental";
-          gameDir = gameDirOption "Advanced Warfare" "209650";
-        };
-        iw2 = {
-          enable = lib.mkEnableOption "the iw2-mod launcher (Call of Duty 2) -- experimental";
-          gameDir = gameDirOption "Call of Duty 2" "2630";
-        };
+        iw5 = clientOptions "Modern Warfare 3 (2011)" "115300" "iw5-mod";
+        iw6 = clientOptions "Ghosts" "209160" "iw6-mod";
+        s1 = clientOptions "Advanced Warfare" "209650" "s1-mod";
+        iw2 = clientOptions "Call of Duty 2" "2630" "iw2-mod";
       };
 
     hmw = {
@@ -214,6 +241,11 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = "Extra arguments passed to Horizon MW Launcher.";
+      };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
       };
     };
 
@@ -239,6 +271,11 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = "Extra arguments passed to boiii.exe.";
+      };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = "Environment for this client's Proton session, e.g. PROTON_NO_NTSYNC = \"1\".";
       };
     };
 
@@ -407,26 +444,44 @@ in
         plutoniumDotnet = cfg.plutonium.dotnet;
         plutoniumExtraWinetricks = cfg.plutonium.extraWinetricks;
         plutoniumExtraArgs = cfg.plutonium.extraArgs;
+        plutoniumEnv = cfg.plutonium.env;
         inherit (cfg.t7x) blackOps3Dir;
         t7xExtraWinetricks = cfg.t7x.extraWinetricks;
         t7xExtraArgs = cfg.t7x.extraArgs;
+        t7xEnv = cfg.t7x.env;
         mwrDir = cfg.h1.mwrDir;
         h1ExtraArgs = cfg.h1.extraArgs;
+        h1Env = cfg.h1.env;
         h1ExtraWinetricks = cfg.h1.extraWinetricks;
         mw2crDir = cfg.h2.mw2crDir;
         h2ExtraArgs = cfg.h2.extraArgs;
+        h2Env = cfg.h2.env;
         h2ExtraWinetricks = cfg.h2.extraWinetricks;
         inherit (cfg) sandbox;
         hmwMwrDir = cfg.hmw.mwrDir;
         hmwExtraArgs = cfg.hmw.extraArgs;
+        hmwEnv = cfg.hmw.env;
         hmwExtraWinetricks = cfg.hmw.extraWinetricks;
         boiiiBlackOps3Dir = cfg.boiii.blackOps3Dir;
         boiiiExtraArgs = cfg.boiii.extraArgs;
+        boiiiEnv = cfg.boiii.env;
         boiiiExtraWinetricks = cfg.boiii.extraWinetricks;
         iw5GameDir = cfg.alterware.iw5.gameDir;
+        iw5ExtraWinetricks = cfg.alterware.iw5.extraWinetricks;
+        iw5ExtraArgs = cfg.alterware.iw5.extraArgs;
+        iw5Env = cfg.alterware.iw5.env;
         iw6GameDir = cfg.alterware.iw6.gameDir;
+        iw6ExtraWinetricks = cfg.alterware.iw6.extraWinetricks;
+        iw6ExtraArgs = cfg.alterware.iw6.extraArgs;
+        iw6Env = cfg.alterware.iw6.env;
         s1GameDir = cfg.alterware.s1.gameDir;
+        s1ExtraWinetricks = cfg.alterware.s1.extraWinetricks;
+        s1ExtraArgs = cfg.alterware.s1.extraArgs;
+        s1Env = cfg.alterware.s1.env;
         iw2GameDir = cfg.alterware.iw2.gameDir;
+        iw2ExtraWinetricks = cfg.alterware.iw2.extraWinetricks;
+        iw2ExtraArgs = cfg.alterware.iw2.extraArgs;
+        iw2Env = cfg.alterware.iw2.env;
         cblauncherExtraArgs = cfg.cblauncher.extraArgs;
         cblauncherExtraWinetricks = cfg.cblauncher.extraWinetricks;
         cblauncherGameDirs = cfg.cblauncher.gameDirs;

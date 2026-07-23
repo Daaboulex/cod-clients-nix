@@ -38,6 +38,24 @@
   cblauncherGameSettings ? { },
   cblauncherSubProton ? { },
   cblauncherEnv ? { },
+  plutoniumEnv ? { },
+  t7xEnv ? { },
+  h1Env ? { },
+  h2Env ? { },
+  hmwEnv ? { },
+  boiiiEnv ? { },
+  iw5ExtraWinetricks ? [ ],
+  iw5ExtraArgs ? [ ],
+  iw5Env ? { },
+  iw6ExtraWinetricks ? [ ],
+  iw6ExtraArgs ? [ ],
+  iw6Env ? { },
+  s1ExtraWinetricks ? [ ],
+  s1ExtraArgs ? [ ],
+  s1Env ? { },
+  iw2ExtraWinetricks ? [ ],
+  iw2ExtraArgs ? [ ],
+  iw2Env ? { },
   desktopEntries ? { },
 }:
 
@@ -145,6 +163,9 @@ let
       exe,
       modes ? [ ],
       gameDir ? "",
+      winetricks ? [ ],
+      extraArgs ? [ ],
+      env ? { },
       desktopEntry ? true,
     }:
     mk {
@@ -153,11 +174,12 @@ let
         desktopName
         sandbox
         desktopEntry
+        winetricks
+        env
         ;
       protonPath = protonPaths.${name} or protonPath;
       extraRuntimeInputs = [ alterware-launcher ];
-      extraArgs = modes;
-      env = { };
+      extraArgs = modes ++ extraArgs;
       acquire = ''
         gamedir="${gameDir}"
         if [ -z "$gamedir" ]; then
@@ -187,6 +209,7 @@ let
       extraArgs ? [ ],
       realCopyExe ? null,
       winetricks ? [ ],
+      env ? { },
       desktopEntry ? true,
     }:
     mk {
@@ -199,9 +222,9 @@ let
         extraArgs
         winetricks
         desktopEntry
+        env
         ;
       protonPath = protonPaths.${name} or protonPath;
-      env = { };
       preLaunch = ''
         gd="${dirOverride}"
         ${lib.optionalString (appid != "") ''
@@ -250,7 +273,7 @@ in
     protonPath = protonPaths.plutonium or protonPath;
     winetricks =
       plutoniumBaseVerbs ++ lib.optional plutoniumDotnet "dotnet472" ++ plutoniumExtraWinetricks;
-    env = lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; };
+    env = lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; } // plutoniumEnv;
     extraArgs = plutoniumExtraArgs;
   };
 
@@ -266,6 +289,7 @@ in
     realCopyExe = "BlackOps3.exe";
     winetricks = t7xExtraWinetricks;
     extraArgs = t7xExtraArgs;
+    env = t7xEnv;
   };
 
   h1 = mkFarmClient {
@@ -279,6 +303,7 @@ in
     dirOverride = mwrDir;
     winetricks = h1ExtraWinetricks;
     extraArgs = h1ExtraArgs;
+    env = h1Env;
   };
 
   h2 = mkFarmClient {
@@ -292,6 +317,7 @@ in
     dirOverride = mw2crDir;
     winetricks = h2ExtraWinetricks;
     extraArgs = h2ExtraArgs;
+    env = h2Env;
   };
 
   hmw = mk {
@@ -307,7 +333,7 @@ in
       "dotnetdesktop8"
     ]
     ++ hmwExtraWinetricks;
-    env = { };
+    env = hmwEnv;
     extraArgs = hmwExtraArgs;
     acquire = ''
       gd="${hmwMwrDir}"
@@ -359,6 +385,7 @@ in
       "-nointro"
     ]
     ++ boiiiExtraArgs;
+    env = boiiiEnv;
   };
 
   cblauncher = mk {
@@ -405,6 +432,9 @@ in
     exe = "iw5-mod.exe";
     modes = [ "-multiplayer" ];
     gameDir = iw5GameDir;
+    winetricks = iw5ExtraWinetricks;
+    extraArgs = iw5ExtraArgs;
+    env = iw5Env;
   };
   iw6 = mkAlterware {
     name = "iw6";
@@ -415,6 +445,9 @@ in
     exe = "iw6-mod.exe";
     modes = [ "-multiplayer" ];
     gameDir = iw6GameDir;
+    winetricks = iw6ExtraWinetricks;
+    extraArgs = iw6ExtraArgs;
+    env = iw6Env;
   };
   s1 = mkAlterware {
     name = "s1";
@@ -425,6 +458,9 @@ in
     exe = "s1-mod.exe";
     modes = [ "-multiplayer" ];
     gameDir = s1GameDir;
+    winetricks = s1ExtraWinetricks;
+    extraArgs = s1ExtraArgs;
+    env = s1Env;
   };
   iw2 = mkAlterware {
     name = "iw2";
@@ -435,5 +471,8 @@ in
     exe = "iw2-mod.exe";
     modes = [ ];
     gameDir = iw2GameDir;
+    winetricks = iw2ExtraWinetricks;
+    extraArgs = iw2ExtraArgs;
+    env = iw2Env;
   };
 }
