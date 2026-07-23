@@ -11,6 +11,7 @@
   icoutils,
   procps,
   util-linux,
+  xprop,
   xrandr,
   makeDesktopItem,
   symlinkJoin,
@@ -115,7 +116,10 @@ let
       procps
       util-linux
     ]
-    ++ lib.optional (virtualDesktop != { }) xrandr
+    ++ lib.optionals (virtualDesktop != { }) [
+      xprop
+      xrandr
+    ]
     ++ extraRuntimeInputs;
     text = ''
       ${steamResolver}
@@ -271,6 +275,9 @@ let
       ${lib.optionalString (virtualDesktop != { }) ''
                 if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
                   vd_res=${lib.escapeShellArg vdResBaked}
+                  if [ -z "$vd_res" ]; then
+                    vd_res="$(xprop -root _NET_WORKAREA 2>/dev/null | awk -F' = ' 'NF>1{split($2,a,", "); if (a[3]+0>0 && a[4]+0>0) printf "%dx%d", a[3], a[4]; exit}')"
+                  fi
                   if [ -z "$vd_res" ]; then
                     vd_res="$(xrandr --current 2>/dev/null | awk '/[0-9]x[0-9]+.*\*/{print $1; exit}')"
                   fi
