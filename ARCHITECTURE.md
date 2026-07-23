@@ -45,7 +45,7 @@ The base builder. Given a client spec it generates a launcher that, at run time:
 7. Runs `acquire` / `preLaunch` hooks (per-client setup - farms, alterware-launcher, etc.).
 8. Launches: `cod_launch umu-run "$run" <args>`.
 
-Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extraArgs`, `acquire`, `preLaunch`, `protonPath`, `sandbox`, `desktopEntry`.
+Key parameters: `name`, `desktopName`, `url`, `exe`, `winetricks`, `env`, `extraArgs`, `acquire`, `preLaunch`, `protonPath`, `sandbox`, `desktopEntry`, `gameSettings`, `subWatch`.
 
 ### `mkFarmClient`
 
@@ -102,17 +102,23 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 
 `cod-proton` (in `proton.nix`, installed by the module when `protonPath = "steam"`) is the picker UI for the override files: a KDE/GNOME dialog or numbered terminal menu of installed Protons that writes/clears them.
 
+## Per-game Proton reroute and declarative CB settings
+
+CB Launcher spawns every title through one `CreateProcessW`, so it drives a single prefix and one Proton. `cblauncher.subProton` overrides that per game: a background watcher (`subWatch`) polls for each listed exe, confirms it belongs to the CB prefix (reading `WINEPREFIX` from `/proc/<pid>/environ`, so it never re-routes the already-rerouted instance), kills it, and relaunches it detached in its own umu prefix under that exe's chosen `protonPath` - so one game can run a different Proton (e.g. Proton-CachyOS) while the rest of CB stays on the launcher default. Each subProton entry carries its own `protonPath`, `env`, `extraArgs`, `gameDir`/`extraGameDirs`, and `winetricks` - the last replaces the CB base verb set for that game's fresh prefix rather than adding to it (unlike the standalone clients' additive `extraWinetricks`).
+
+`launchOptions`, `configFiles`, `gameSettings`, and the display-derived `maxFps` form the declarative settings surface: they seed per-exe CB launch arguments into `properties.json`, enforce per-game `seta` cvars into the games' config files, and set per-exe Wine AppDefaults and dxvk.conf options - all without hand-editing files inside the prefix.
+
 ## The Home Manager module
 
 `hm-module.nix` exposes `myModules.home.cod-clients`:
 
-- `enable`, `sandbox` (default on), `protonPath`.
-- `plutonium.{enable, dotnet, extraWinetricks, extraArgs}`.
-- `t7x.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
-- `h1.{enable, mwrDir, extraWinetricks, extraArgs}`, `h2.{enable, mw2crDir, extraWinetricks, extraArgs}`.
-- `hmw.{enable, mwrDir, extraWinetricks, extraArgs}`, `boiii.{enable, blackOps3Dir, extraWinetricks, extraArgs}`.
-- `cblauncher.{enable, gameDirs, extraWinetricks, extraArgs, gameSettings}` - `gameSettings` is keyed by executable name and writes per-exe Wine AppDefaults registry entries plus per-exe dxvk.conf sections, so every game inside the shared CB prefix can carry its own Windows version, DLL overrides, mouse capture, and DXVK options; the Proton build, ntsync class, and sandbox stay launcher-wide.
-- `alterware.{iw5,iw6,s1,iw2}.{enable, gameDir}` (default-off, experimental; `gameDir` points at an existing install from any source, empty auto-detects from Steam).
+- `enable`, `sandbox` (default on), `protonPath`, `protonPaths` (per-client Proton overrides, keyed by client name), `maxFps` (display-derived frame cap, seeded into every arg-consuming game's settings).
+- `plutonium.{enable, dotnet, extraWinetricks, extraArgs, env}`.
+- `t7x.{enable, blackOps3Dir, extraWinetricks, extraArgs, env}`.
+- `h1.{enable, mwrDir, extraWinetricks, extraArgs, env}`, `h2.{enable, mw2crDir, extraWinetricks, extraArgs, env}`.
+- `hmw.{enable, mwrDir, extraWinetricks, extraArgs, env}`, `boiii.{enable, blackOps3Dir, extraWinetricks, extraArgs, env}`.
+- `cblauncher.{enable, gameDirs, extraWinetricks, extraArgs, env, gameSettings, launchOptions, configFiles, subProton}` - `gameSettings` is keyed by executable name and writes per-exe Wine AppDefaults registry entries plus per-exe dxvk.conf sections, so every game inside the shared CB prefix can carry its own Windows version, DLL overrides, mouse capture, and DXVK options. `launchOptions` seeds per-exe CB launch arguments into `properties.json`, `configFiles` enforces per-game `seta` cvars into the games' config files, and the display-derived `maxFps` feeds both. `subProton` reroutes a listed game out of the shared CB prefix into its own Proton (see below), so for a rerouted game the Proton build and ntsync class are per-game; the sandbox stays launcher-wide.
+- `alterware.{iw5,iw6,s1,iw2}.{enable, gameDir, extraWinetricks, extraArgs, env}` (default-off, experimental; `gameDir` points at an existing install from any source, empty auto-detects from Steam).
 - `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
 - `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).
 
