@@ -280,6 +280,14 @@ in
           -portable and --in-process-gpu flags.
         '';
       };
+      env = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+        description = ''
+          Environment for the CB Launcher Proton session and every game it starts
+          in its prefix, e.g. PROTON_ENABLE_WAYLAND = "1".
+        '';
+      };
       gameSettings = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule {
@@ -338,8 +346,69 @@ in
           sticks, or crashes on focus loss. Because CB spawns games as child
           processes in its own session, they inherit this desktop, so one entry
           covers the launcher and all its games (they render at WIDTHxHEIGHT rather
-          than exclusive fullscreen). Set the resolution to your monitor's, or set
-          to { } to disable.
+          than exclusive fullscreen). Session-aware at launch: applied when running
+          under Wayland (where the compositor hides Wine popups), removed again on
+          a plain X11 session (where popups render natively) -- the same config is
+          correct on either. Set the resolution to your monitor's, or set to { }
+          to disable entirely.
+        '';
+      };
+      subProton = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              protonPath = lib.mkOption {
+                type = lib.types.str;
+                description = "Proton directory this game runs under, e.g. \"\${pkgs.proton-ge.v10.steamcompattool}\".";
+              };
+              gameDir = lib.mkOption {
+                type = lib.types.str;
+                description = "The CB-managed directory holding this game and its client exe (absolute path).";
+              };
+              winetricks = lib.mkOption {
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+                default = null;
+                description = "Winetricks verbs for this game's own prefix; null uses the CB base verb set.";
+              };
+              extraArgs = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = "Arguments always passed to the game, before the ones CB supplied.";
+              };
+              virtualDesktop = lib.mkOption {
+                type = lib.types.attrsOf lib.types.str;
+                default = { };
+                description = "Per-exe Wine virtual desktop inside this game's own prefix (exe -> WIDTHxHEIGHT).";
+              };
+              env = lib.mkOption {
+                type = lib.types.attrsOf lib.types.str;
+                default = { };
+                description = "Environment for this game's Proton session, e.g. PROTON_ENABLE_WAYLAND = \"1\".";
+              };
+            };
+          }
+        );
+        default = { };
+        example = lib.literalExpression ''
+          {
+            "s1x.exe" = {
+              protonPath = "''${pkgs.proton-ge.v10.steamcompattool}";
+              gameDir = "/home/user/Games/CoD/aw_game_files";
+            };
+          }
+        '';
+        description = ''
+          Per-game Proton for games CB Launcher starts, keyed by the exe name CB
+          spawns. cb-launcher runs every game as a plain child in its own prefix
+          (one Proton), so the launcher itself cannot vary Proton per game; this
+          option reroutes instead: the moment CB spawns a listed exe in the CB
+          prefix, that process is stopped (before the game initializes) and the
+          same exe is relaunched from the same CB-managed gameDir in its own
+          prefix under the given Proton, with the arguments CB passed (captured
+          from the spawned command line; whitespace-split). CB's UI shows the
+          game as exited and its own presence/stop controls do not track the
+          rerouted process; closing CB does not close the game. Exes not listed
+          launch unchanged inside the CB prefix.
         '';
       };
     };
@@ -382,10 +451,18 @@ in
         cblauncherGameDirs = cfg.cblauncher.gameDirs;
         cblauncherGameSettings = cfg.cblauncher.gameSettings;
         cblauncherVirtualDesktop = cfg.cblauncher.virtualDesktop;
+        cblauncherSubProton = cfg.cblauncher.subProton;
+        cblauncherEnv = cfg.cblauncher.env;
         inherit (cfg) desktopEntries;
       };
     in
     {
+      assertions = lib.mapAttrsToList (exe: sub: {
+        assertion =
+          lib.hasSuffix ".exe" (lib.toLower exe) && lib.hasPrefix "/" sub.gameDir && sub.protonPath != "";
+        message = "cod-clients.cblauncher.subProton.\"${exe}\": the key must end in .exe, gameDir must be an absolute path, and protonPath must be non-empty.";
+      }) cfg.cblauncher.subProton;
+
       home.packages =
         lib.optional (cfg.protonPath == "steam") clients.protonpicker
         ++ lib.optional cfg.plutonium.enable clients.plutonium

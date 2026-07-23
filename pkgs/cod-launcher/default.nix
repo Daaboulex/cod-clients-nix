@@ -9,6 +9,8 @@
   coreutils,
   gnugrep,
   icoutils,
+  procps,
+  util-linux,
   makeDesktopItem,
   symlinkJoin,
 }:
@@ -24,6 +26,7 @@
   winetricks ? [ ],
   gameSettings ? { },
   virtualDesktop ? { },
+  subWatch ? { },
   env ? { },
   preLaunch ? "",
   extraArgs ? [ ],
@@ -93,6 +96,21 @@ let
   );
   vdHash = builtins.substring 0 12 (builtins.hashString "sha256" vdBody);
   vdReg = writeText "cod-${name}-vdesktop.reg" ("Windows Registry Editor Version 5.00\n\n" + vdBody);
+  vdOffBody = lib.concatStrings (
+    [ "[HKEY_CURRENT_USER\\Software\\Wine\\Explorer\\Desktops]\n" ]
+    ++ lib.mapAttrsToList (exe: _: "\"${keyOk exe}\"=-\n") virtualDesktop
+    ++ [ "\n" ]
+    ++ lib.mapAttrsToList (
+      exe: _:
+      "[HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\${keyOk exe}\\Explorer]\n\"Desktop\"=-\n\n"
+    ) virtualDesktop
+  );
+  vdOffReg = writeText "cod-${name}-vdesktop-off.reg" (
+    "Windows Registry Editor Version 5.00\n\n" + vdOffBody
+  );
+
+  subLogName = exe: lib.strings.sanitizeDerivationName exe;
+  subPattern = exe: lib.replaceStrings [ "." ] [ "\\." ] exe;
 
   launcher = writeShellApplication {
     name = "cod-${name}";
@@ -103,6 +121,10 @@ let
       coreutils
       gnugrep
       icoutils
+    ]
+    ++ lib.optionals (subWatch != { }) [
+      procps
+      util-linux
     ]
     ++ extraRuntimeInputs;
     text = ''
@@ -257,10 +279,17 @@ let
         } > "$gs_marker"
       fi
       ${lib.optionalString (virtualDesktop != { }) ''
-        if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != ${lib.escapeShellArg vdHash} ]; then
-          echo "cod-${name}: applying per-exe Wine virtual desktop (Wayland dropdown/cursor fix)"
-          COD_SANDBOX=0 umu-run regedit /S ${vdReg}
-          printf '%s\n' ${lib.escapeShellArg vdHash} > "$state/.vdesktop"
+        if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+          vd_want="on-${vdHash}"
+          vd_reg=${vdReg}
+        else
+          vd_want="off-${vdHash}"
+          vd_reg=${vdOffReg}
+        fi
+        if [ "$(head -n1 "$state/.vdesktop" 2>/dev/null || true)" != "$vd_want" ]; then
+          echo "cod-${name}: syncing the Wine virtual desktop to this session type ($vd_want)"
+          COD_SANDBOX=0 umu-run regedit /S "$vd_reg"
+          printf '%s\n' "$vd_want" > "$state/.vdesktop"
         fi
       ''}
       ${lib.optionalString (url != "") ''
@@ -301,7 +330,37 @@ let
         rm -rf "$tmpico"
       fi
 
-      cod_launch umu-run "$run" ${argsStr}
+      ${
+        if subWatch == { } then
+          ''
+            cod_launch umu-run "$run" ${argsStr} "$@"
+          ''
+        else
+          ''
+            (cod_launch umu-run "$run" ${argsStr} "$@") &
+            cod_main=$!
+            declare -A cod_routed
+            while kill -0 "$cod_main" 2>/dev/null; do
+              ${lib.concatStrings (
+                lib.mapAttrsToList (exe: bin: ''
+                  while IFS= read -r cod_pid; do
+                    [ -n "$cod_pid" ] || continue
+                    [ -n "''${cod_routed[$cod_pid]:-}" ] && continue
+                    grep -zqs "WINEPREFIX=$WINEPREFIX" "/proc/$cod_pid/environ" || continue
+                    cod_args="$(tr '\0' '\n' < "/proc/$cod_pid/cmdline" 2>/dev/null | tail -n +2 | tr '\n' ' ')" || cod_args=""
+                    kill "$cod_pid" 2>/dev/null || true
+                    cod_routed[$cod_pid]=1
+                    echo "cod-${name}: rerouting ${exe} to its own Proton prefix"
+                    read -r -a cod_argv <<< "$cod_args" || true
+                    setsid ${lib.escapeShellArg bin} "''${cod_argv[@]}" >> "$state/sub-${subLogName exe}.log" 2>&1 < /dev/null &
+                  done < <(pgrep -f ${lib.escapeShellArg (subPattern exe)} 2>/dev/null || true)
+                '') subWatch
+              )}
+              sleep 0.3
+            done
+            wait "$cod_main"
+          ''
+      }
     '';
   };
 

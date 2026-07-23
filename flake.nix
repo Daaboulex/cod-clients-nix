@@ -110,12 +110,32 @@
               cblauncher.gameDirs = [ "/tmp/cb-games" ];
               cblauncher.extraWinetricks = [ "dotnet472" ];
               cblauncher.extraArgs = [ "-someflag" ];
+              cblauncher.env.PROTON_LOG = "1";
+              cblauncher.subProton."probe.exe" = {
+                protonPath = "/probe-proton";
+                gameDir = "/tmp/cb-games/probe";
+                env.PROTON_ENABLE_WAYLAND = "1";
+              };
               steamAdd.enable = true;
               steamNative.enable = true;
               steamLink.enable = true;
               cleanops.enable = true;
             };
           };
+
+          checks.sub-proton-build =
+            ((pkgs.callPackage ./pkgs/cod-launcher/clients.nix { }) {
+              cblauncherSubProton."probe.exe" = {
+                protonPath = "/probe-proton";
+                gameDir = "/probe-games";
+                winetricks = [ ];
+                extraArgs = [ ];
+                virtualDesktop = {
+                  "probe.exe" = "1920x1080";
+                };
+                env = { };
+              };
+            }).cblauncher;
 
           checks.steam-add-logic =
             let

@@ -37,6 +37,8 @@
   cblauncherGameDirs ? [ ],
   cblauncherGameSettings ? { },
   cblauncherVirtualDesktop ? { },
+  cblauncherSubProton ? { },
+  cblauncherEnv ? { },
   desktopEntries ? { },
 }:
 
@@ -70,6 +72,48 @@ let
     "win10"
     "grabfullscreen=y"
   ];
+
+  cbBaseVerbs = [
+    "corefonts"
+    "vcrun2005"
+    "vcrun2008"
+    "vcrun2010"
+    "vcrun2012"
+    "vcrun2013"
+    "vcrun2022"
+    "d3dcompiler_43"
+    "d3dcompiler_47"
+    "d3dx9"
+    "d3dx10"
+    "d3dx11_43"
+    "xact"
+    "xact_x64"
+    "xinput"
+    "physx"
+  ];
+
+  subSlug =
+    exe: lib.toLower (lib.replaceStrings [ " " "." ] [ "-" "-" ] (lib.removeSuffix ".exe" exe));
+
+  cbsubs = lib.mapAttrs (
+    exe: sub:
+    mk {
+      name = "cbsub-${subSlug exe}";
+      desktopName = "CB ${exe}";
+      desktopEntry = false;
+      inherit sandbox;
+      protonPath = sub.protonPath;
+      winetricks = if sub.winetricks == null then cbBaseVerbs else sub.winetricks;
+      virtualDesktop = sub.virtualDesktop;
+      env = sub.env;
+      extraArgs = sub.extraArgs;
+      preLaunch = ''
+        gamedir_rw=${lib.escapeShellArg sub.gameDir}
+        run=${lib.escapeShellArg "${sub.gameDir}/${exe}"}
+        cd "$gamedir_rw"
+      '';
+    }
+  ) cblauncherSubProton;
 
   mkAlterware =
     {
@@ -304,28 +348,11 @@ in
     protonPath = protonPaths.cblauncher or protonPath;
     url = "https://github.com/CBServers/updater/raw/main/updater/cb-launcher/cb-launcher.exe";
     exe = "cb-launcher.exe";
-    winetricks = [
-      "corefonts"
-      "vcrun2005"
-      "vcrun2008"
-      "vcrun2010"
-      "vcrun2012"
-      "vcrun2013"
-      "vcrun2022"
-      "d3dcompiler_43"
-      "d3dcompiler_47"
-      "d3dx9"
-      "d3dx10"
-      "d3dx11_43"
-      "xact"
-      "xact_x64"
-      "xinput"
-      "physx"
-    ]
-    ++ cblauncherExtraWinetricks;
+    winetricks = cbBaseVerbs ++ cblauncherExtraWinetricks;
     gameSettings = cblauncherGameSettings;
     virtualDesktop = cblauncherVirtualDesktop;
-    env = { };
+    subWatch = lib.mapAttrs (_: p: lib.getExe p) cbsubs;
+    env = cblauncherEnv;
     extraArgs = [
       "-portable"
       "--in-process-gpu"
