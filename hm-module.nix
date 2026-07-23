@@ -2,10 +2,49 @@
   config,
   lib,
   pkgs,
+  osConfig ? { },
   ...
 }:
 let
   cfg = config.myModules.home.cod-clients;
+  displayMonitors =
+    if
+      osConfig ? myModules && osConfig.myModules ? desktop && osConfig.myModules.desktop ? displays
+    then
+      osConfig.myModules.desktop.displays.monitors or { }
+    else
+      { };
+  maxRefreshHz = lib.foldl' lib.max 0 (
+    map (m: m.mode.refreshRate / 1000) (lib.attrValues displayMonitors)
+  );
+  derivedMaxFps = if maxRefreshHz > 0 then maxRefreshHz - 2 else null;
+  fpsGames = [
+    "cod4x"
+    "t4"
+    "t5"
+    "t6"
+    "iw5"
+    "mw2"
+    "mwr"
+    "mw2r"
+    "hmw"
+    "iw"
+  ];
+  fpsLaunchDefaults =
+    if cfg.maxFps == null then
+      { }
+    else
+      lib.genAttrs fpsGames (_: "+set com_maxfps ${toString cfg.maxFps}");
+  ghostsDisplaySettings = {
+    r_displayMode = "windowed (no border)";
+    r_monitor = "0";
+    vid_xpos = "0";
+    vid_ypos = "0";
+    cl_bypassMouseInput = "1";
+  }
+  // lib.optionalAttrs (cfg.maxFps != null) {
+    com_maxfps = toString cfg.maxFps;
+  };
 in
 {
   options.myModules.home.cod-clients = {
@@ -46,6 +85,21 @@ in
         CB Launcher is one process tree: every game it spawns is a plain child
         process inheriting the cblauncher entry, so a per-game Proton through CB
         does not exist.
+      '';
+    };
+
+    maxFps = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = derivedMaxFps;
+      defaultText = lib.literalExpression "highest declared monitor refresh minus 2, null without a displays module";
+      description = ''
+        Frame cap injected into every client that verifiably consumes
+        com_maxfps: the CB-managed arg-consuming games via launchOptions, the
+        rerouted prefixes via their default arguments, and Ghosts via its
+        config files. Derived from the host displays module so a 240 Hz panel
+        yields 237 and the cap stays inside the adaptive-sync window; null
+        disables injection. Black Ops III caps at 250 in its own menu and
+        Black Ops 4 carries no verified cap surface -- both stay manual.
       '';
     };
 
@@ -369,9 +423,8 @@ in
       };
       launchOptions = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
-        default = {
-          ghosts = "+set cl_bypassMouseInput 1";
-        };
+        default = fpsLaunchDefaults;
+        defaultText = lib.literalExpression "per-game +set com_maxfps maxFps for the arg-consuming clients";
         example = {
           iw5 = "+vid_restart";
         };
@@ -384,6 +437,32 @@ in
           usable. Set a game's key to "" to seed nothing for it.
         '';
       };
+      configFiles = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = {
+          "ghosts_game_files/players2/config.cfg" = ghostsDisplaySettings;
+          "ghosts_game_files/players2/config_mp.cfg" = ghostsDisplaySettings;
+        };
+        defaultText = lib.literalExpression "Ghosts borderless-on-primary display settings plus com_maxfps";
+        example = lib.literalExpression ''
+          {
+            "cod4_game_files/main/autoexec_mp.cfg" = {
+              raw_input = "1";
+            };
+          }
+        '';
+        description = ''
+          Declarative seta enforcement in game config files, keyed by a path
+          relative to each cblauncher.gameDirs root -> dvar -> value. Before
+          every launch each existing root has matching files upserted: a
+          present seta line is rewritten to the declared value, a missing one
+          is appended, so whatever a game saves on exit is reasserted next
+          start. The default forces Ghosts into borderless on the primary
+          monitor, which sidesteps its exclusive-fullscreen display switching
+          (the multi-monitor crash and alt-tab kill class) and keeps its menu
+          mouse routed and its frame cap applied.
+        '';
+      };
       subProton = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule {
@@ -394,8 +473,9 @@ in
                 description = "Proton directory this game runs under, e.g. \"\${pkgs.proton-ge.v10.steamcompattool}\"; null inherits the global protonPath.";
               };
               gameDir = lib.mkOption {
-                type = lib.types.str;
-                description = "The CB-managed directory holding this game and its client exe (absolute path).";
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "The CB-managed directory holding this game and its client exe (absolute path); null derives <first gameDirs root>/<game>_game_files for the known exes.";
               };
               extraGameDirs = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
@@ -506,6 +586,8 @@ in
         cblauncherGameSettings = cfg.cblauncher.gameSettings;
         cblauncherSubProton = cfg.cblauncher.subProton;
         cblauncherLaunchOptions = cfg.cblauncher.launchOptions;
+        cblauncherConfigFiles = cfg.cblauncher.configFiles;
+        inherit (cfg) maxFps;
         cblauncherEnv = cfg.cblauncher.env;
         inherit (cfg) desktopEntries;
       };

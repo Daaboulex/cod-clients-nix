@@ -39,6 +39,8 @@
   cblauncherGameSettings ? { },
   cblauncherSubProton ? { },
   cblauncherLaunchOptions ? { },
+  cblauncherConfigFiles ? { },
+  maxFps ? null,
   cblauncherEnv ? { },
   plutoniumEnv ? { },
   t7xEnv ? { },
@@ -128,6 +130,48 @@ let
 
   subVerbsFor = exe: if exe == "plutonium.exe" then plutoniumSubVerbs else cbBaseVerbs;
 
+  subDirFor =
+    exe:
+    {
+      "s1x.exe" = "aw_game_files";
+      "iw6x.exe" = "ghosts_game_files";
+      "iw3mp.exe" = "cod4_game_files";
+      "iw3sp.exe" = "cod4_game_files";
+      "plutonium.exe" = "mw3_game_files";
+      "iw4x.exe" = "mw2_game_files";
+      "boiii.exe" = "bo3_game_files";
+      "h1-mod.exe" = "mwr_game_files";
+      "iw7-mod.exe" = "iw_game_files";
+    }
+    .${exe} or null;
+
+  subGameDir =
+    exe: sub:
+    let
+      explicit = sub.gameDir or null;
+      derived = subDirFor exe;
+    in
+    if explicit != null then
+      explicit
+    else if derived != null && cblauncherGameDirs != [ ] then
+      "${lib.head cblauncherGameDirs}/${derived}"
+    else
+      throw "cod-cbsub: no gameDir for ${exe} -- set subProton.\"${exe}\".gameDir or add a cblauncher.gameDirs root and use a known exe";
+
+  subArgsFor =
+    exe:
+    if maxFps == null then
+      [ ]
+    else if
+      lib.elem exe [
+        "s1x.exe"
+        "iw3mp.exe"
+      ]
+    then
+      [ "+set com_maxfps ${toString maxFps}" ]
+    else
+      [ ];
+
   subEnvFor =
     exe:
     if exe == "s1x.exe" then
@@ -152,16 +196,18 @@ let
       protonPath = if (sub.protonPath or null) == null then protonPath else sub.protonPath;
       winetricks = if (sub.winetricks or null) == null then subVerbsFor exe else sub.winetricks;
       env = subEnvFor exe // (sub.env or { });
-      extraArgs = sub.extraArgs or [ ];
+      extraArgs = subArgsFor exe ++ (sub.extraArgs or [ ]);
       preLaunch = ''
         cod_rw_dirs=${
-          lib.escapeShellArg (lib.concatStringsSep "\n" ([ sub.gameDir ] ++ (sub.extraGameDirs or [ ])))
+          lib.escapeShellArg (
+            lib.concatStringsSep "\n" ([ (subGameDir exe sub) ] ++ (sub.extraGameDirs or [ ]))
+          )
         }
         while IFS= read -r d; do
           [ -n "$d" ] && mkdir -p "$d"
         done <<< "$cod_rw_dirs"
-        gamedir_rw=${lib.escapeShellArg sub.gameDir}
-        run=${lib.escapeShellArg "${sub.gameDir}/${exe}"}
+        gamedir_rw=${lib.escapeShellArg (subGameDir exe sub)}
+        run=${lib.escapeShellArg "${subGameDir exe sub}/${exe}"}
         cd "$gamedir_rw"
       '';
     }
@@ -424,6 +470,48 @@ in
     ]
     ++ cblauncherExtraArgs;
     preLaunch = ''
+      ${lib.optionalString (cblauncherConfigFiles != { }) ''
+                cod_seta() {
+                  if grep -q "^seta $2 " "$1" 2>/dev/null; then
+                    sed -i "s|^seta $2 .*|seta $2 \"$3\"|" "$1"
+                  else
+                    printf 'seta %s "%s"\n' "$2" "$3" >> "$1"
+                  fi
+                }
+                while IFS= read -r cod_root; do
+                  [ -n "$cod_root" ] || continue
+        ${
+          lib.concatStrings (
+            lib.mapAttrsToList (
+              rel: settings:
+              "          if [ -d \"$cod_root/"
+              + dirOf rel
+              + "\" ] || [ -d \"$cod_root/"
+              + lib.head (lib.splitString "/" rel)
+              + "\" ]; then\n"
+              + "            mkdir -p \"$cod_root/"
+              + dirOf rel
+              + "\"\n"
+              + "            touch \"$cod_root/"
+              + rel
+              + "\"\n"
+              + lib.concatStrings (
+                lib.mapAttrsToList (
+                  k: v:
+                  "            cod_seta \"$cod_root/"
+                  + rel
+                  + "\" "
+                  + lib.escapeShellArg k
+                  + " "
+                  + lib.escapeShellArg v
+                  + "\n"
+                ) settings
+              )
+              + "          fi\n"
+            ) cblauncherConfigFiles
+          )
+        }        done <<< "$cod_rw_dirs"
+      ''}
       ${lib.optionalString (cblauncherLaunchOptions != { }) ''
         cod_props="$state/cbservers/user/properties.json"
         cod_lo=${

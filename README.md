@@ -192,10 +192,19 @@ as an in-game setting cannot be packaged and is set once in the game's menu.
 | Game | Packaged | In-game / notes |
 |---|---|---|
 | Advanced Warfare (s1x) | Rerouted prefix defaults to the Wayland recipe: `PROTON_USE_WAYLAND=1 PROTON_USE_SDL=1 VKD3D_CONFIG=descriptor_heap`; pair it with a Proton that implements the Wayland toggle (proton-cachyos) | Display mode Borderless avoids the exclusive-fullscreen freeze class |
-| Ghosts (iw6x) | `launchOptions.ghosts = "+set cl_bypassMouseInput 1"` seeds the menu-mouse fix | If menus still miss the cursor, run `vid_restart` in the console after the option applies; alt-tab stability needs the second display off while playing |
+| Ghosts (iw6x) | `configFiles` enforces `r_displayMode "windowed (no border)"` on the primary monitor plus the menu-mouse routing and the frame cap in players2 configs | Borderless sidesteps the exclusive-fullscreen display switching behind the multi-monitor crash and alt-tab kill |
+| CoD4 (iw3mp via CoD4X) | rerouted prefix gets the frame cap; shared runtime fixed the join-time crash class | `raw_input 1` and resolution = display resolution if the cursor sticks to an edge; competitive fps points are 125/250/333 |
+| WaW / BO1 / BO2 (Plutonium) | frame cap via launch options | BO1: `r_dof_enable 0` fixes the ADS blur; keep fps caps at or under 165 there if mouse feel degrades |
+| CoD2 | none by default | `PROTON_NO_ESYNC=1` is load-bearing if it black-screens after the menu |
 | MW3 (iw5 via Plutonium) | none needed to launch | `vid_restart` in the console revives the menu mouse; Mouse Smoothing on and Vsync off correct the feel; keep mouse polling at or under 500 Hz |
 | Black Ops III (boiii) | steam client seeding is automatic | Use Borderless Fullscreen; exclusive fullscreen misbehaves on alt-tab |
 | CB Launcher dropdowns | not fixable client-side | KWin XWayland popup handling (KDE bug 516450), unfixed upstream |
+
+The frame cap (`maxFps`, derived from the host's declared displays, 237 on a
+240 Hz panel) is injected wherever `com_maxfps` verifiably lands: launch
+options for the arg-consuming CB games, default arguments for rerouted
+prefixes, and Ghosts' config files. Black Ops III caps at 250 in its own menu
+and Black Ops 4 exposes no verified cap surface; both stay manual settings.
 
 Raw-input starvation under XWayland (frozen or escaping cursors in this game
 family) is fixed upstream by wine 11.13's focus-gated raw input; Proton builds
