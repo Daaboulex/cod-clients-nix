@@ -194,7 +194,7 @@ let
       desktopEntry = false;
       inherit sandbox;
       protonPath = if (sub.protonPath or null) == null then protonPath else sub.protonPath;
-      winetricks = if (sub.winetricks or null) == null then subVerbsFor exe else sub.winetricks;
+      winetricks = subVerbsFor exe ++ (sub.extraWinetricks or [ ]);
       env = subEnvFor exe // (sub.env or { });
       extraArgs = subArgsFor exe ++ (sub.extraArgs or [ ]);
       preLaunch = ''

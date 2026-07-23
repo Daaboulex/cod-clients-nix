@@ -486,10 +486,10 @@ in
                   directories for plutonium.exe, which serves several titles.
                 '';
               };
-              winetricks = lib.mkOption {
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-                default = null;
-                description = "Winetricks verbs for this game's own prefix; null uses the CB base verb set.";
+              extraWinetricks = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = "Extra winetricks verbs added to this game's own prefix, on top of its CB base verb set.";
               };
               extraArgs = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
