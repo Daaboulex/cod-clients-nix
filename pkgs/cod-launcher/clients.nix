@@ -470,6 +470,10 @@ in
     ]
     ++ cblauncherExtraArgs;
     preLaunch = ''
+      cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" cblauncherGameDirs)}
+      while IFS= read -r d; do
+        [ -n "$d" ] && mkdir -p "$d"
+      done <<< "$cod_rw_dirs"
       ${lib.optionalString (cblauncherConfigFiles != { }) ''
                 cod_seta() {
                   if grep -q "^seta $2 " "$1" 2>/dev/null; then
@@ -529,10 +533,6 @@ in
           printf '%s' "$cod_lo" > "$cod_props"
         fi
       ''}
-      cod_rw_dirs=${lib.escapeShellArg (lib.concatStringsSep "\n" cblauncherGameDirs)}
-      while IFS= read -r d; do
-        [ -n "$d" ] && mkdir -p "$d"
-      done <<< "$cod_rw_dirs"
     '';
   };
 
