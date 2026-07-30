@@ -35,6 +35,9 @@ let
       { }
     else
       lib.genAttrs fpsGames (_: "+set com_maxfps ${toString cfg.maxFps}");
+  cbLaunchDefaults = fpsLaunchDefaults // {
+    bo3 = "-nosteam";
+  };
   ghostsDisplaySettings = {
     r_displayMode = "windowed (no border)";
     r_monitor = "0";
@@ -109,8 +112,12 @@ in
       description = ''
         Run every client inside a bubblewrap sandbox that exposes only game files
         (Steam libraries, read-only), the client's own prefix/state (read-write),
-        and GPU/audio/input/display/network -- no $HOME or unrelated files. Set the
-        COD_SANDBOX=0 environment variable at runtime to bypass it for one launch.
+        and GPU/audio/input/display/network -- no $HOME or unrelated files. Each
+        Steam library's steamapps/shadercache is overlaid with a writable
+        per-client directory, so the Steam client library and mesa can write the
+        appid-scoped shader cache they expect without touching the real library.
+        Set the COD_SANDBOX=0 environment variable at runtime to bypass the
+        sandbox for one launch.
       '';
     };
 
@@ -423,8 +430,8 @@ in
       };
       launchOptions = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
-        default = fpsLaunchDefaults;
-        defaultText = lib.literalExpression "per-game +set com_maxfps maxFps for the arg-consuming clients";
+        default = cbLaunchDefaults;
+        defaultText = lib.literalExpression "per-game +set com_maxfps maxFps for the arg-consuming clients, plus bo3 = \"-nosteam\"";
         example = {
           iw5 = "+vid_restart";
         };
@@ -434,7 +441,14 @@ in
           no field for them under Wine. CB appends them to the game's command
           line. The ghosts default routes mouse input past the raw-input path
           that XWayland starves on Wayland desktops, which makes the menu
-          usable. Set a game's key to "" to seed nothing for it.
+          usable. The bo3 default is "-nosteam": BOIII's Steam integration is
+          an optional sidecar (its auth and CB's presence/joins are
+          Steam-free), and without a reachable running Steam client the Valve
+          steamclient library it would load can kill the game with a fatal
+          "stalled cross-thread pipe" assert; bypassing it costs only the
+          Steam overlay and live workshop sync. Set a game's key to "" to
+          seed nothing for it (bo3 = "" restores the Steam integration
+          attempt).
         '';
       };
       configFiles = lib.mkOption {

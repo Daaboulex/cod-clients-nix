@@ -83,9 +83,11 @@
       [ -n "''${XAUTHORITY:-}" ] && bw+=(--ro-bind-try "$XAUTHORITY" "$XAUTHORITY")
     fi
 
-    local sl
+    local sl sc_backing="$state/steam-shadercache"
+    mkdir -p "$sc_backing"
     while IFS= read -r sl; do
       bw+=(--ro-bind-try "$sl/steamapps" "$sl/steamapps")
+      [ -d "$sl/steamapps/shadercache" ] && bw+=(--bind "$sc_backing" "$sl/steamapps/shadercache")
     done < <(list_steam_libraries)
 
     while IFS= read -r sl; do

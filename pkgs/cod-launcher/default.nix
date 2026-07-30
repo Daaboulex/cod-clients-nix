@@ -115,6 +115,7 @@ let
       export WINEPREFIX="$state/pfx"
       export GAMEID="umu-cod-${name}"
       export STORE="none"
+      export PROTON_LOG_DIR="''${PROTON_LOG_DIR:-$state}"
       protonPath_baked=${lib.escapeShellArg protonPath}
       proton_pref_file="''${XDG_CONFIG_HOME:-$HOME/.config}/cod-clients/proton"
       proton_pref_client="''${XDG_CONFIG_HOME:-$HOME/.config}/cod-clients/${name}.proton"
@@ -208,29 +209,38 @@ let
           touch "$state/.netroot"
         fi
       ''}
-      if [ ! -f "$state/.steam-seeded-v2" ]; then
-        echo "cod-${name}: seeding the Steam client into the prefix (boiii-lineage clients load steamclient64.dll)"
+      seed_src=""
+      while IFS= read -r root; do
+        if [ -d "$root/legacycompat" ]; then
+          seed_src="$root/legacycompat"
+          break
+        fi
+      done < <(_steam_roots)
+      seed_sig="steamless"
+      if [ -n "$seed_src" ]; then
+        seed_sig="$(stat -Lc '%n %Y %s' "$seed_src/steamclient.dll" "$seed_src/steamclient64.dll" "$seed_src/GameOverlayRenderer64.dll" "$seed_src/Steam.dll" "$seed_src/SteamService.exe" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+      fi
+      if [ "$(cat "$state/.steam-seed" 2>/dev/null || true)" != "$seed_sig" ]; then
+        echo "cod-${name}: syncing the installed Steam client into the prefix (boiii-lineage clients load steamclient64.dll)"
         COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Valve\Steam' /v InstallPath /t REG_SZ /d 'C:\Program Files (x86)\Steam' /f
         steam_dir="$WINEPREFIX/drive_c/Program Files (x86)/Steam"
         mkdir -p "$steam_dir"
-        legacy=""
-        while IFS= read -r root; do
-          if [ -f "$root/legacycompat/steamclient64.dll" ]; then
-            legacy="$root/legacycompat"
-            break
-          fi
-        done < <(_steam_roots)
-        if [ -n "$legacy" ]; then
-          for dll in steamclient64.dll steamclient.dll GameOverlayRenderer64.dll Steam.dll; do
-            if [ -f "$legacy/$dll" ]; then cp -Lf "$legacy/$dll" "$steam_dir/"; fi
+        if [ -n "$seed_src" ]; then
+          for dll in steamclient.dll steamclient64.dll GameOverlayRenderer64.dll Steam.dll; do
+            if [ -e "$seed_src/$dll" ]; then cp -Lf "$seed_src/$dll" "$steam_dir/$dll"; fi
           done
-          cp -Lf "$legacy/GameOverlayRenderer64.dll" "$steam_dir/gameoverlayrenderer64.dll" 2>/dev/null || true
-          cp -Lf "$legacy/SteamService.exe" "$steam_dir/steam.exe" 2>/dev/null || touch "$steam_dir/steam.exe"
+          cp -Lf "$seed_src/GameOverlayRenderer64.dll" "$steam_dir/gameoverlayrenderer64.dll" 2>/dev/null || true
+          if [ -e "$seed_src/SteamService.exe" ]; then
+            cp -Lf "$seed_src/SteamService.exe" "$steam_dir/steam.exe"
+          else
+            [ -e "$steam_dir/steam.exe" ] || touch "$steam_dir/steam.exe"
+          fi
         else
           echo "cod-${name}: no Steam client legacycompat found; boiii/t7x/BO3 need the Steam client installed for their steamclient64.dll" >&2
-          touch "$steam_dir/steam.exe"
+          [ -e "$steam_dir/steam.exe" ] || touch "$steam_dir/steam.exe"
         fi
-        touch "$state/.steam-seeded-v2"
+        printf '%s\n' "$seed_sig" > "$state/.steam-seed"
+        rm -f "$state/.steam-seeded" "$state/.steam-seeded-v2"
       fi
       gs_marker="$state/.gamesettings"
       if [ "$(head -n1 "$gs_marker" 2>/dev/null || true)" != "${gsHash}" ]; then
