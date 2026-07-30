@@ -218,12 +218,6 @@ let
           touch "$state/.netroot"
         fi
       ''}
-      if [ ! -f "$state/.notray" ]; then
-        echo "cod-${name}: disabling Windows tray-icon forwarding in the prefix"
-        COD_SANDBOX=0 umu-run reg add 'HKCU\Software\Wine\Explorer' /v ShowSystray /t REG_SZ /d N /f
-        COD_SANDBOX=0 umu-run reg add 'HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer' /v NoTrayItemsDisplay /t REG_DWORD /d 1 /f
-        touch "$state/.notray"
-      fi
       seed_src=""
       while IFS= read -r root; do
         if [ -d "$root/legacycompat" ]; then
