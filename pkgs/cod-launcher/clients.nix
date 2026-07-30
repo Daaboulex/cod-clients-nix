@@ -178,7 +178,6 @@ let
       {
         PROTON_USE_WAYLAND = "1";
         PROTON_USE_SDL = "1";
-        VKD3D_CONFIG = "descriptor_heap";
       }
     else
       { };
@@ -209,6 +208,12 @@ let
         gamedir_rw=${lib.escapeShellArg (subGameDir exe sub)}
         run=${lib.escapeShellArg "${subGameDir exe sub}/${exe}"}
         cd "$gamedir_rw"
+      ''
+      + lib.optionalString (exe == "plutonium.exe") ''
+        plut="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Plutonium/storage"
+        cod_seta "$plut/t5/players/config.cfg" raw_input 1
+        cod_seta "$plut/t6/players/plutonium_mp.cfg" raw_input 1
+        cod_seta "$plut/t6/players/plutonium_zm.cfg" raw_input 1
       '';
     }
   ) cblauncherSubProton;
@@ -269,6 +274,7 @@ let
       realCopyExe ? null,
       winetricks ? [ ],
       env ? { },
+      gameSettings ? { },
       desktopEntry ? true,
     }:
     mk {
@@ -282,6 +288,7 @@ let
         winetricks
         desktopEntry
         env
+        gameSettings
         ;
       protonPath = protonPaths.${name} or protonPath;
       preLaunch = ''
@@ -332,8 +339,17 @@ in
     protonPath = protonPaths.plutonium or protonPath;
     winetricks =
       plutoniumBaseVerbs ++ lib.optional plutoniumDotnet "dotnet472" ++ plutoniumExtraWinetricks;
-    env = lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; } // plutoniumEnv;
+    env =
+      lib.optionalAttrs (maxFps != null) { DXVK_FRAME_RATE = toString maxFps; }
+      // lib.optionalAttrs plutoniumDotnet { WINEDLLOVERRIDES = "mscoree="; }
+      // plutoniumEnv;
     extraArgs = plutoniumExtraArgs;
+    preLaunch = ''
+      plut="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Plutonium/storage"
+      cod_seta "$plut/t5/players/config.cfg" raw_input 1
+      cod_seta "$plut/t6/players/plutonium_mp.cfg" raw_input 1
+      cod_seta "$plut/t6/players/plutonium_zm.cfg" raw_input 1
+    '';
   };
 
   t7x = mkFarmClient {
@@ -377,6 +393,7 @@ in
     winetricks = h2ExtraWinetricks;
     extraArgs = h2ExtraArgs;
     env = h2Env;
+    gameSettings."h2-mod.exe".dxvk = "dxgi.customVendorId = 10de";
   };
 
   hmw = mk {
@@ -459,7 +476,10 @@ in
     extraRuntimeInputs = [ jq ];
     gameSettings = cblauncherGameSettings;
     subWatch = lib.mapAttrs (_: p: lib.getExe p) cbsubs;
-    env = cblauncherEnv;
+    env = {
+      PROTON_OLD_GL_STRING = "1";
+    }
+    // cblauncherEnv;
     extraArgs = [
       "-portable"
       "--in-process-gpu"
@@ -475,13 +495,6 @@ in
         [ -n "$d" ] && mkdir -p "$d"
       done <<< "$cod_rw_dirs"
       ${lib.optionalString (cblauncherConfigFiles != { }) ''
-                cod_seta() {
-                  if grep -q "^seta $2 " "$1" 2>/dev/null; then
-                    sed -i "s|^seta $2 .*|seta $2 \"$3\"|" "$1"
-                  else
-                    printf 'seta %s "%s"\n' "$2" "$3" >> "$1"
-                  fi
-                }
                 while IFS= read -r cod_root; do
                   [ -n "$cod_root" ] || continue
         ${
@@ -533,6 +546,10 @@ in
           printf '%s' "$cod_lo" > "$cod_props"
         fi
       ''}
+      cb_plut="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Plutonium/storage"
+      cod_seta "$cb_plut/t5/players/config.cfg" raw_input 1
+      cod_seta "$cb_plut/t6/players/plutonium_mp.cfg" raw_input 1
+      cod_seta "$cb_plut/t6/players/plutonium_zm.cfg" raw_input 1
     '';
   };
 

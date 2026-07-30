@@ -44,6 +44,7 @@ let
     vid_xpos = "0";
     vid_ypos = "0";
     cl_bypassMouseInput = "1";
+    r_elevatedPriority = "0";
   }
   // lib.optionalAttrs (cfg.maxFps != null) {
     com_maxfps = toString cfg.maxFps;
@@ -99,10 +100,13 @@ in
         Frame cap injected into every client that verifiably consumes
         com_maxfps: the CB-managed arg-consuming games via launchOptions, the
         rerouted prefixes via their default arguments, and Ghosts via its
-        config files. Derived from the host displays module so a 240 Hz panel
-        yields 237 and the cap stays inside the adaptive-sync window; null
-        disables injection. Black Ops III caps at 250 in its own menu and
-        Black Ops 4 carries no verified cap surface -- both stay manual.
+        config files. The standalone Plutonium client carries the same cap as
+        a DXVK frame limit (DXVK_FRAME_RATE) because the old engines couple
+        mouse speed to frame rate. Derived from the host displays module so a
+        240 Hz panel yields 237 and the cap stays inside the adaptive-sync
+        window; null disables injection. Black Ops III caps at 250 in its own
+        menu and Black Ops 4 carries no verified cap surface -- both stay
+        manual.
       '';
     };
 
@@ -171,8 +175,12 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = ''
-          Extra winetricks verbs for the t7x prefix, e.g. [ "mf" "mfplat" ] if you hit
-          the media-foundation codec error.
+          Extra winetricks verbs for the t7x prefix. The old media-foundation
+          codec remedy ([ "mf" "mfplat" ]) is legacy on GE-Proton 11's FFmpeg
+          video stack -- if intro videos still hang there, deleting the game's
+          videos directory is the current workaround. Another known BO3 lever:
+          [ "sound=alsa" ] if the game black-screens with audio on a host with
+          many audio devices.
         '';
       };
       extraArgs = lib.mkOption {
@@ -324,8 +332,10 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = ''
-          Extra winetricks verbs for the BOIII prefix, e.g. [ "mf" "mfplat" ] if you hit
-          the media-foundation codec error (same class as t7x).
+          Extra winetricks verbs for the BOIII prefix. Same levers as t7x:
+          mf/mfplat is a legacy codec remedy on GE-Proton 11 (delete the game's
+          videos directory instead if videos hang), and [ "sound=alsa" ] cures
+          the black-screen-with-audio class on hosts with many audio devices.
         '';
       };
       extraArgs = lib.mkOption {

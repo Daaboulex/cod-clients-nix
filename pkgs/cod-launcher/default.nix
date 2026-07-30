@@ -99,6 +99,15 @@ let
     text = ''
       ${steamResolver}
       ${sandboxFn}
+      cod_seta() {
+        mkdir -p "$(dirname "$1")"
+        touch "$1"
+        if grep -q "^seta $2 " "$1" 2>/dev/null; then
+          sed -i "s|^seta $2 .*|seta $2 \"$3\"|" "$1"
+        else
+          printf 'seta %s "%s"\n' "$2" "$3" >> "$1"
+        fi
+      }
       export COD_SANDBOX="''${COD_SANDBOX:-${if sandbox then "1" else "0"}}"
 
       state="''${XDG_DATA_HOME:-$HOME/.local/share}/cod-clients/${name}"
@@ -209,6 +218,12 @@ let
           touch "$state/.netroot"
         fi
       ''}
+      if [ ! -f "$state/.notray" ]; then
+        echo "cod-${name}: disabling Windows tray-icon forwarding in the prefix"
+        COD_SANDBOX=0 umu-run reg add 'HKCU\Software\Wine\Explorer' /v ShowSystray /t REG_SZ /d N /f
+        COD_SANDBOX=0 umu-run reg add 'HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer' /v NoTrayItemsDisplay /t REG_DWORD /d 1 /f
+        touch "$state/.notray"
+      fi
       seed_src=""
       while IFS= read -r root; do
         if [ -d "$root/legacycompat" ]; then
