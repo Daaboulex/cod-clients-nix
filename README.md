@@ -313,7 +313,4 @@ nix flake check  # eval + build + std-conformance + module eval
 All GitHub Actions are pinned to full commit SHAs, synced from the Nix Packaging Standard.
 
 <!-- BEGIN generated:footer -->
----
-
-*Maintained as part of the [Daaboulex](https://github.com/Daaboulex) NixOS ecosystem.*
 <!-- END generated:footer -->
