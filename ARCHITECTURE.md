@@ -12,7 +12,7 @@ It is a consumer of the Nix Packaging Standard (`github:Daaboulex/nix-packaging-
 
 | Path | Role |
 |---|---|
-| `flake.nix` | Inputs, `overlays.default`, `homeManagerModules.default`, `packages.cod-*`, the `checks` |
+| `flake.nix` | Inputs, `overlays.default`, `homeModules.default`, `packages.cod-*`, the `checks` |
 | `hm-module.nix` | The `myModules.home.cod-clients` option surface + package wiring |
 | `pkgs/cod-launcher/default.nix` | `mkCodLauncher` - the core launcher builder |
 | `pkgs/cod-launcher/clients.nix` | Every client + the `mkFarmClient` / `mkAlterware` helpers |
@@ -141,7 +141,7 @@ The two shortcut tools share the same Python pattern: binary `shortcuts.vdf` is 
 
 - `packages.cod-*` (one per client + helper) and `packages.default`.
 - `overlays.default` exposing every `cod-*` (the standard's shape is package + overlay + module).
-- `homeManagerModules.default`.
+- `homeModules.default`.
 - `checks.module-eval-hm` (full HM module eval with clients enabled), `checks.steam-add-logic`, `checks.steam-native-logic`.
 
 Conformance: MIT `LICENSE` (the packaging is MIT; clients are `meta.license = unfree`), `.github/update.json` with `upstream.type: "none"` (third-party wrapper, no CHANGELOG required), a `platforms.aarch64-linux` drop reason, and the synced workflow/`.envrc`/`.gitignore` files kept byte-identical (enforced by `std-conformance`). Never hand-edit the synced files - change them in the standard and re-sync.

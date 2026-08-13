@@ -26,8 +26,8 @@
 
       imports = [ inputs.std.flakeModules.base ];
 
-      flake.homeManagerModules.default = import ./hm-module.nix;
-      flake.homeManagerModules.cod-clients = import ./hm-module.nix;
+      flake.homeModules.default = import ./hm-module.nix;
+      flake.homeModules.cod-clients = import ./hm-module.nix;
 
       flake.overlays.default =
         _final: prev:

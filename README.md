@@ -59,7 +59,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 
 ## Home Manager Module
 
-The repo exports `homeManagerModules.default`. Options:
+The repo exports `homeModules.default`. Options:
 
 ```nix
 myModules.home.cod-clients = {
@@ -241,7 +241,7 @@ Add as a flake input:
 
 ```nix
 # 1. flake input (above), then wire the module into the host:
-home-manager.sharedModules = [ inputs.cod-clients.homeManagerModules.default ];
+home-manager.sharedModules = [ inputs.cod-clients.homeModules.default ];
 
 # 2. enable it in the host HM config:
 myModules.home.cod-clients = {
