@@ -15,7 +15,16 @@ os.makedirs(cfg)
 scpath = os.path.join(cfg, "shortcuts.vdf")
 with open(scpath, "wb") as handle:
     vdf.binary_dump(
-        {"shortcuts": {"0": {"appid": 42, "appname": "MyGame", "exe": '"/usr/bin/mygame"', "tags": {}}}},
+        {
+            "shortcuts": {
+                "0": {
+                    "appid": 42,
+                    "appname": "MyGame",
+                    "exe": '"/usr/bin/mygame"',
+                    "tags": {},
+                }
+            }
+        },
         handle,
     )
 
@@ -36,26 +45,39 @@ sa.add(files, launchers)
 with open(scpath, "rb") as handle:
     after_add = vdf.binary_load(handle)
 names = sorted(sa.entry_name(e) for e in after_add["shortcuts"].values())
-assert names == sorted(["MyGame", "Plutonium", "Call of Duty: Black Ops III (t7x)"]), names
+assert names == sorted(["MyGame", "Plutonium", "Call of Duty: Black Ops III (t7x)"]), (
+    names
+)
 assert os.path.exists(scpath + ".cod-bak"), "backup not written"
 
 sa.add(files, launchers)
 with open(scpath, "rb") as handle:
     after_readd = vdf.binary_load(handle)
-assert len(after_readd["shortcuts"]) == 3, ("re-add duplicated", len(after_readd["shortcuts"]))
+assert len(after_readd["shortcuts"]) == 3, (
+    "re-add duplicated",
+    len(after_readd["shortcuts"]),
+)
 
-pluto = next(e for e in after_readd["shortcuts"].values() if sa.entry_name(e) == "Plutonium")
+pluto = next(
+    e for e in after_readd["shortcuts"].values() if sa.entry_name(e) == "Plutonium"
+)
 assert pluto["exe"] == '"/nix/x/bin/cod-plutonium"', pluto["exe"]
 assert pluto["StartDir"] == '"/nix/x/bin"', pluto["StartDir"]
-assert isinstance(pluto["appid"], int) and -(2**31) <= pluto["appid"] < 2**31, pluto["appid"]
+assert isinstance(pluto["appid"], int) and -(2**31) <= pluto["appid"] < 2**31, pluto[
+    "appid"
+]
 assert sa.is_ours(pluto), "cod entry not tagged"
 
-mygame = next(e for e in after_readd["shortcuts"].values() if sa.entry_name(e) == "MyGame")
+mygame = next(
+    e for e in after_readd["shortcuts"].values() if sa.entry_name(e) == "MyGame"
+)
 assert not sa.is_ours(mygame), "foreign shortcut wrongly claimed"
 
 sa.remove(files)
 with open(scpath, "rb") as handle:
     after_remove = vdf.binary_load(handle)
-assert [sa.entry_name(e) for e in after_remove["shortcuts"].values()] == ["MyGame"], after_remove
+assert [sa.entry_name(e) for e in after_remove["shortcuts"].values()] == ["MyGame"], (
+    after_remove
+)
 
 print("steam-add logic: OK")

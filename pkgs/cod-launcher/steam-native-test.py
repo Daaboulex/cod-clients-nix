@@ -15,13 +15,26 @@ os.makedirs(cfg)
 scpath = os.path.join(cfg, "shortcuts.vdf")
 with open(scpath, "wb") as handle:
     vdf.binary_dump(
-        {"shortcuts": {"0": {"appid": 42, "appname": "MyGame", "exe": '"/usr/bin/mygame"', "tags": {}}}},
+        {
+            "shortcuts": {
+                "0": {
+                    "appid": 42,
+                    "appname": "MyGame",
+                    "exe": '"/usr/bin/mygame"',
+                    "tags": {},
+                }
+            }
+        },
         handle,
     )
 os.makedirs(os.path.join(tmp, "config"))
 cvpath = os.path.join(tmp, "config", "config.vdf")
 with open(cvpath, "w", encoding="utf-8") as handle:
-    vdf.dump({"InstallConfigStore": {"Software": {"Valve": {"Steam": {}}}}}, handle, pretty=True)
+    vdf.dump(
+        {"InstallConfigStore": {"Software": {"Valve": {"Steam": {}}}}},
+        handle,
+        pretty=True,
+    )
 
 os.makedirs(os.path.join(tmp, "userdata", "0", "config"))
 link_root = tmp + "_link"
@@ -56,17 +69,24 @@ with open(scpath, "rb") as handle:
 names = sorted(sn.entry_name(e) for e in after["shortcuts"].values())
 assert names == sorted(["MyGame", "Plutonium: BO2 MP", "t7x: BO3"]), names
 assert os.path.exists(scpath + ".cod-bak"), "shortcuts backup missing"
-pluto = next(e for e in after["shortcuts"].values() if sn.entry_name(e) == "Plutonium: BO2 MP")
+pluto = next(
+    e for e in after["shortcuts"].values() if sn.entry_name(e) == "Plutonium: BO2 MP"
+)
 assert "plutonium://play/t6mp" in pluto["LaunchOptions"], pluto["LaunchOptions"]
 assert sn.is_ours(pluto)
-assert not sn.is_ours(next(e for e in after["shortcuts"].values() if sn.entry_name(e) == "MyGame"))
+assert not sn.is_ours(
+    next(e for e in after["shortcuts"].values() if sn.entry_name(e) == "MyGame")
+)
 
 with open(cvpath, encoding="utf-8") as handle:
     cv = vdf.load(handle)
 mapping = cv["InstallConfigStore"]["Software"]["Valve"]["Steam"]["CompatToolMapping"]
 appids = [str(sn.unsigned32(sn.shortcut_appid(s["exe"], s["name"]))) for s in shortcuts]
 for appid in appids:
-    assert appid in mapping and mapping[appid]["name"] == "GE-Proton10-34", (appid, mapping)
+    assert appid in mapping and mapping[appid]["name"] == "GE-Proton10-34", (
+        appid,
+        mapping,
+    )
 assert os.path.exists(cvpath + ".cod-bak"), "config.vdf backup missing"
 
 sn.add(cds, cps, shortcuts, "GE-Proton10-34")
@@ -77,11 +97,17 @@ assert len(readd["shortcuts"]) == 3, ("re-add duplicated", len(readd["shortcuts"
 sn.remove(cds, cps)
 with open(scpath, "rb") as handle:
     after_remove = vdf.binary_load(handle)
-assert [sn.entry_name(e) for e in after_remove["shortcuts"].values()] == ["MyGame"], after_remove
+assert [sn.entry_name(e) for e in after_remove["shortcuts"].values()] == ["MyGame"], (
+    after_remove
+)
 with open(cvpath, encoding="utf-8") as handle:
     cv2 = vdf.load(handle)
 mapping2 = (
-    cv2.get("InstallConfigStore", {}).get("Software", {}).get("Valve", {}).get("Steam", {}).get("CompatToolMapping", {})
+    cv2.get("InstallConfigStore", {})
+    .get("Software", {})
+    .get("Valve", {})
+    .get("Steam", {})
+    .get("CompatToolMapping", {})
 )
 for appid in appids:
     assert appid not in mapping2, ("compat tool not cleared", appid)

@@ -43,9 +43,13 @@ def load_shortcuts(path):
                 data = vdf.binary_load(handle)
         except Exception as error:
             sys.stderr.write(
-                "cod-steam-add: cannot parse " + path + " (" + str(error) + ") -- left untouched.\n"
+                "cod-steam-add: cannot parse "
+                + path
+                + " ("
+                + str(error)
+                + ") -- left untouched.\n"
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
     else:
         data = {}
     data.setdefault("shortcuts", {})
@@ -93,7 +97,7 @@ def make_entry(exe, name):
 
 
 def next_key(shortcuts):
-    keys = [int(key) for key in shortcuts.keys() if key.isdigit()]
+    keys = [int(key) for key in shortcuts if key.isdigit()]
     return str(max(keys, default=-1) + 1)
 
 

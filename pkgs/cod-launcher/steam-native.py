@@ -74,8 +74,10 @@ def load_shortcuts(path):
             with open(path, "rb") as handle:
                 data = vdf.binary_load(handle)
         except Exception as error:
-            sys.stderr.write("cod-steam-native: cannot parse %s (%s) -- left untouched.\n" % (path, error))
-            raise SystemExit(1)
+            sys.stderr.write(
+                f"cod-steam-native: cannot parse {path} ({error}) -- left untouched.\n"
+            )
+            raise SystemExit(1) from None
     else:
         data = {}
     data.setdefault("shortcuts", {})
@@ -123,7 +125,7 @@ def make_entry(sc):
 
 
 def next_key(shortcuts):
-    keys = [int(k) for k in shortcuts.keys() if k.isdigit()]
+    keys = [int(k) for k in shortcuts if k.isdigit()]
     return str(max(keys, default=-1) + 1)
 
 
@@ -135,14 +137,20 @@ def set_compat_tool(config_paths, appids, tool):
             with open(path, encoding="utf-8") as handle:
                 data = vdf.load(handle)
         except Exception as error:
-            sys.stderr.write("cod-steam-native: cannot parse %s (%s) -- skipping compat tool.\n" % (path, error))
+            sys.stderr.write(
+                f"cod-steam-native: cannot parse {path} ({error}) -- skipping compat tool.\n"
+            )
             continue
         store = data
         for key in ("InstallConfigStore", "Software", "Valve", "Steam"):
             store = store.setdefault(key, {})
         mapping = store.setdefault("CompatToolMapping", {})
         for appid in appids:
-            mapping[str(unsigned32(appid))] = {"name": tool, "config": "", "priority": "250"}
+            mapping[str(unsigned32(appid))] = {
+                "name": tool,
+                "config": "",
+                "priority": "250",
+            }
         backup(path)
         tmp = path + ".cod-tmp"
         with open(tmp, "w", encoding="utf-8") as handle:
@@ -180,7 +188,7 @@ def fetch_art(config_dir, appid, art_appid):
         dest = os.path.join(grid, str(unsigned32(appid)) + suffix)
         if os.path.exists(dest):
             continue
-        url = "%s/%s/%s" % (ART_HOST, art_appid, remote)
+        url = f"{ART_HOST}/{art_appid}/{remote}"
         try:
             with urllib.request.urlopen(url, timeout=20) as resp:
                 if resp.status != 200:
@@ -216,10 +224,10 @@ def add(config_dirs, config_paths, shortcuts, tool):
             if sc.get("art_appid"):
                 fetch_art(config_dir, entry["appid"], sc["art_appid"])
         write_binary(path, data)
-        print("cod-steam-native: wrote %d shortcut(s) to %s" % (len(shortcuts), path))
+        print(f"cod-steam-native: wrote {len(shortcuts)} shortcut(s) to {path}")
     set_compat_tool(config_paths, appids, tool)
     if tool:
-        print("cod-steam-native: set compat tool '%s' for %d app(s)" % (tool, len(appids)))
+        print(f"cod-steam-native: set compat tool '{tool}' for {len(appids)} app(s)")
 
 
 def remove(config_dirs, config_paths):
@@ -238,7 +246,7 @@ def remove(config_dirs, config_paths):
             kept[str(len(kept))] = entry
         data["shortcuts"] = kept
         write_binary(path, data)
-        print("cod-steam-native: removed cod shortcuts from %s" % path)
+        print(f"cod-steam-native: removed cod shortcuts from {path}")
     clear_compat_tool(config_paths, removed_appids)
 
 
@@ -259,7 +267,9 @@ def main():
     config_dirs = userdata_dirs(roots)
     config_paths = config_vdf_paths(roots)
     if not config_dirs:
-        sys.stderr.write("cod-steam-native: no Steam userdata/<id>/config found -- install Steam and log in once.\n")
+        sys.stderr.write(
+            "cod-steam-native: no Steam userdata/<id>/config found -- install Steam and log in once.\n"
+        )
         sys.exit(1)
     if command == "list":
         show(config_dirs)
@@ -267,7 +277,12 @@ def main():
     if command == "remove":
         remove(config_dirs, config_paths)
     else:
-        add(config_dirs, config_paths, payload["shortcuts"], payload.get("compat_tool", ""))
+        add(
+            config_dirs,
+            config_paths,
+            payload["shortcuts"],
+            payload.get("compat_tool", ""),
+        )
     print("cod-steam-native: restart Steam to apply.")
 
 
