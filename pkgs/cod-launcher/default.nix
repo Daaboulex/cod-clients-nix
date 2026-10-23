@@ -227,9 +227,17 @@ let
       done < <(_steam_roots)
       seed_sig="steamless"
       if [ -n "$seed_src" ]; then
-        seed_sig="$(stat -Lc '%n %Y %s' "$seed_src/steamclient.dll" "$seed_src/steamclient64.dll" "$seed_src/GameOverlayRenderer64.dll" "$seed_src/Steam.dll" "$seed_src/SteamService.exe" 2>/dev/null | sha256sum | cut -d' ' -f1)"
+        seed_files=()
+        for f in steamclient.dll steamclient64.dll GameOverlayRenderer64.dll Steam.dll SteamService.exe; do
+          if [ -e "$seed_src/$f" ]; then seed_files+=("$seed_src/$f"); fi
+        done
+        if [ "''${#seed_files[@]}" -gt 0 ]; then
+          seed_sig="$(stat -Lc '%n %Y %s' "''${seed_files[@]}" | sha256sum | cut -d' ' -f1)"
+        fi
       fi
-      if [ "$(cat "$state/.steam-seed" 2>/dev/null || true)" != "$seed_sig" ]; then
+      seeded=""
+      if [ -e "$state/.steam-seed" ]; then seeded="$(cat "$state/.steam-seed")"; fi
+      if [ "$seeded" != "$seed_sig" ]; then
         echo "cod-${name}: syncing the installed Steam client into the prefix (boiii-lineage clients load steamclient64.dll)"
         COD_SANDBOX=0 umu-run reg add 'HKLM\Software\Wow6432Node\Valve\Steam' /v InstallPath /t REG_SZ /d 'C:\Program Files (x86)\Steam' /f
         steam_dir="$WINEPREFIX/drive_c/Program Files (x86)/Steam"
@@ -238,7 +246,7 @@ let
           for dll in steamclient.dll steamclient64.dll GameOverlayRenderer64.dll Steam.dll; do
             if [ -e "$seed_src/$dll" ]; then cp -Lf "$seed_src/$dll" "$steam_dir/$dll"; fi
           done
-          cp -Lf "$seed_src/GameOverlayRenderer64.dll" "$steam_dir/gameoverlayrenderer64.dll" 2>/dev/null || true
+          if [ -e "$seed_src/GameOverlayRenderer64.dll" ]; then cp -Lf "$seed_src/GameOverlayRenderer64.dll" "$steam_dir/gameoverlayrenderer64.dll"; fi
           if [ -e "$seed_src/SteamService.exe" ]; then
             cp -Lf "$seed_src/SteamService.exe" "$steam_dir/steam.exe"
           else
