@@ -26,7 +26,8 @@ It is a consumer of the Nix Packaging Standard (`github:Daaboulex/nix-packaging-
 | `pkgs/cod-launcher/*-test.py` | `runCommand` regression tests wired as flake checks |
 | [`.github/update.json`](.github/update.json) | Repo metadata (description, topics, `upstream.type`, arch drops) |
 | `.github/workflows/*` | Synced byte-for-byte from the standard - do not hand-edit |
-| [`README.md`](README.md) | User-facing docs (has the standard's `generated:*` markers) |
+| [`README.md`](README.md) | The page a person reads first |
+| `docs/*.md` | Compatibility, the Steam helpers, design and development, linked from the README |
 
 ## The client model
 
@@ -126,7 +127,7 @@ CB Launcher spawns every title through one `CreateProcessW`, so it drives a sing
 
 ## Steam integration
 
-Four independent tools, each fail-closed (refuse while Steam runs, back up before writing, only touch their own tagged entries, reversible):
+Four independent tools, each reversible and backing up before it writes. The two shortcut tools also refuse to add or remove while Steam runs and only touch their own tagged entries:
 
 - `cod-steamlink` - swaps a game's exe for `plutonium.exe` so Steam's Play tracks hours; prints the `sudo chattr +i` line; `--undo`.
 - `cod-cleanops` - drops the CleanOps `d3d11.dll` into owned BO3; prints the `WINEDLLOVERRIDES` launch option; `--undo`.
@@ -158,7 +159,7 @@ Why it is robust: the launchers are `writeShellApplication` packages with no bui
 2. Add the block to [`clients.nix`](pkgs/cod-launcher/clients.nix) (for a farm client it is the one-liner above) and, if it takes options, thread `dirOverride`/`winetricks`/`extraArgs` through the function params.
 3. Add the option to [`hm-module.nix`](hm-module.nix) (`enable`, a `<game>Dir`, `extraWinetricks`, `extraArgs`), pass the values into the `clients` call, and add `++ lib.optional cfg.<name>.enable clients.<name>` to `home.packages`.
 4. Add `cod-<name> = clients.<name>;` to `overlays.default` and `packages.cod-<name> = pkgs.cod-<name>;` in [`flake.nix`](flake.nix), and `<name>.enable = true;` to the `module-eval-hm` config.
-5. Document it in [`README.md`](README.md) (intro bullet + clients table).
+5. Document it in [`README.md`](README.md) (the clients table) and in [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) (the clients table and the description).
 6. `git add` the new files, `nix flake check`, commit, push.
 
 If it is a Steam-launched-only client (like CleanOps), model it as a helper (drop a file into the owned game + print the launch option) rather than a launcher from the base builder.

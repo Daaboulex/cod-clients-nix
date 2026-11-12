@@ -1,170 +1,41 @@
 # cod-clients-nix
 
-<!-- BEGIN generated:badges -->
-[![CI](https://github.com/Daaboulex/cod-clients-nix/actions/workflows/ci.yml/badge.svg)](https://github.com/Daaboulex/cod-clients-nix/actions/workflows/ci.yml)
-[![NixOS unstable](https://img.shields.io/badge/NixOS-unstable-78C0E8?logo=nixos&logoColor=white)](https://nixos.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-<!-- END generated:badges -->
+Community Call of Duty clients for NixOS: Plutonium, t7x, the AlterWare family
+and more, run under umu-launcher and Proton. It is a Home Manager module for
+people who own the games and want the modded clients without building a Wine
+prefix by hand.
 
-Call of Duty custom clients packaged for NixOS - a Home Manager launcher module that runs Plutonium, t7x, and the AlterWare family under umu-launcher + Proton, each confined in a bubblewrap sandbox with access to only game-related files, and optionally links Plutonium into Steam so it tracks your hours.
+Each client runs inside a bubblewrap sandbox that hides your home directory
+and shows it only the game files and its own state. The client programs are
+fetched from their own servers at the first launch and keep themselves up to
+date. You bring the games.
 
-<!-- BEGIN generated:upstream -->
-## Upstream
+It runs on x86_64 Linux only. Start with Plutonium and Black Ops 1, Black Ops 2
+or World at War. Every other client is experimental, and several have not been
+verified from start to finish on Linux.
 
-| | |
-|---|---|
-| **Project** | Plutonium (plutonium.pw) + t7x (alterware.dev) - runtime-fetched, self-updating |
-| **License** | Proprietary / third-party clients (packaging is MIT) |
-| **Tracked** | None - the official clients self-update at runtime |
+## What you get
 
-<!-- END generated:upstream -->
-
-## What Is This?
-
-A Nix flake that launches community Call of Duty clients on Linux without hand-rolling a Wine prefix. Launchers:
-
-- **`cod-plutonium`** - Black Ops 1 (T5), Black Ops 2 (T6), Modern Warfare 3 (IW5), World at War (T4). Fetches the official self-updating `plutonium.exe`, bootstraps a Proton prefix with the required winetricks verbs, and launches under umu-launcher.
-- **`cod-t7x`** - Black Ops III (T7). Fetches the official self-updating `t7x.exe` and runs it against a symlink-farm of your owned retail BO3 install.
-- **`cod-h1`** - Modern Warfare Remastered (Aurora h1-mod). Fetches the self-updating `h1-mod.exe` and runs it against a symlink-farm of your owned MWR install. Default-off, experimental.
-- **`cod-h2`** - MW2 Campaign Remastered (Aurora h2-mod). Self-updating `h2-mod.exe` against a symlink-farm of your owned MW2CR install. Default-off, experimental.
-- **`cod-iw5` / `cod-iw6` / `cod-s1` / `cod-iw2`** - the AlterWare family: Modern Warfare 3 (2011), Ghosts, Advanced Warfare, and Call of Duty 2. Each uses the native `alterware-launcher` to update the client into your owned Steam install, then launches it under umu. Default-off and experimental (see Caveats).
-- **`cod-hmw`** - Horizon MW (Modern Warfare Remastered mod). Self-updating launcher that downloads the mod into a symlink-farm of your owned MWR install. Default-off, experimental.
-- **`cod-boiii`** - BOIII client (Black Ops III). Drop-in self-updating client that runs against a symlink-farm of your owned BO3 install. Default-off, experimental — DXVK rendering is untested on Linux (dedicated-server mode works under Wine).
-- **`cod-cblauncher`** - CB Launcher hub that bundles ~17 community clients (Plutonium, BOIII, IW4x, CoD4x, IW6x, S1x, H1/H2-Mod, IW7-Mod, HorizonMW, Project BO4, stock CoD1/UO). It downloads and launches those itself into a folder you grant via `cblauncher.gameDirs`. Default-off, experimental.
-- **`cod-steamlink`** - optional helper that swaps a Steam game's exe for Plutonium so **Steam launches it on "Play" and tracks your hours**, safely and reversibly.
-- **`cod-steam-add`** - optional helper that registers every installed launcher as a Steam **non-Steam shortcut** (like Heroic's "Add to Steam"), so each shows in Steam, tracks hours, and takes per-shortcut launch options + Proton. Reversible (`remove`), sandbox preserved.
-- **`cod-cleanops`** - optional helper that drops the CleanOps `d3d11.dll` into your owned retail Black Ops III, so launching BO3 through Steam loads CleanOps (cheat-removal + P2P hosting). Set the printed `WINEDLLOVERRIDES` launch option; reversible (`--undo`).
-- **`cod-steam-native`** - registers the set-up clients as Steam shortcuts that run their `.exe` under **Steam's own Proton** (so the Compatibility dropdown works), reusing each client's prepared prefix. Plutonium gets one shortcut per owned game+mode (launches straight in via `plutonium://`); sets GE-Proton and fetches official cover art. Reversible (`remove`).
-
-Every launcher runs inside a **bubblewrap sandbox** (see Security). The live client binaries are fetched at runtime into a per-client state directory and maintain themselves from their own official servers - the flake never pins, re-hosts, or freezes a game payload. You bring the games: each client mods a copy you legitimately own on Steam.
-
-## Clients
-
-| Command | Titles | Base game (own on Steam) | Notes |
-|---|---|---|---|
-| `cod-plutonium` | BO1, BO2, MW3, WaW | 202970 (BO2), 42700 (BO1), 10090 (WaW), 42750 (free MW3 route) | Standalone umu launcher; point Plutonium at the Steam folder in its UI |
-| `cod-t7x` | BO3 | 311210 (Black Ops III) | Standalone; experimental on Linux (see Caveats) |
-| `cod-h1` | MWR | 393080 (Modern Warfare Remastered) | Aurora h1-mod; farm + self-updating client; experimental, default-off |
-| `cod-h2` | MW2CR | MW2 Campaign Remastered (Battle.net; not on Steam) | Aurora h2-mod; set `h2.mw2crDir`; experimental, default-off |
-| `cod-steamlink` | BO2 (default) + any Plutonium title | as above | Steam hours-tracking via a reversible exe-swap |
-| `cod-steam-add` | all installed launchers | - | Adds each launcher to Steam as a non-Steam shortcut; Proton + launch options per shortcut |
-| `cod-cleanops` | BO3 retail MP | 311210 (Black Ops III) | Drops CleanOps d3d11.dll into owned BO3 (cheat-removal + P2P); launch via Steam |
-| `cod-iw5` | Modern Warfare 3 (2011) | 115300 | AlterWare; experimental, default-off |
-| `cod-iw6` | Ghosts | 209160 | AlterWare; experimental, default-off |
-| `cod-s1` | Advanced Warfare | 209650 | AlterWare; experimental, default-off |
-| `cod-iw2` | Call of Duty 2 | 2630 | AlterWare; experimental, default-off |
-| `cod-hmw` | MWR | 393080 | Horizon MW; farm + self-updating launcher; experimental, default-off |
-| `cod-boiii` | BO3 | 311210 | BOIII; farm + self-updating client; experimental, default-off |
-| `cod-cblauncher` | 17 CoD titles | - | CB Launcher hub; experimental, default-off |
-
-## Home Manager Module
-
-The repo exports `homeModules.default`. Every option under `myModules.home.cod-clients` is declared, with its type, default and description, in [`hm-module.nix`](hm-module.nix).
-
-- **`protonPath`** is what umu runs the clients under. The default pins nixpkgs GE-Proton reproducibly (its `steamcompattool` output). Set it to `"steam"` to auto-detect the newest Proton in your Steam `compatibilitytools.d` (where ProtonPlus installs its builds; the auto-detect skips an aarch64 Proton build on an x86_64 host so a wrongly downloaded arm64 GE-Proton can't be picked), or to a specific Proton path. Three runtime overrides need **no rebuild**, in priority order: `COD_PROTON=<path>` for a single launch; a **per-client** file `~/.config/cod-clients/<name>.proton` (e.g. `cblauncher.proton`) to pin one client's Proton; or the global `~/.config/cod-clients/proton`. Each file holds a Proton path or a `compatibilitytools.d` tool name, and applies to app-drawer launches too.
-- **`cod-proton`** is the friendly picker for those overrides. It is installed only when `protonPath = "steam"` - the route where you have several Protons to choose between; on the default pinned-GE route Proton is fixed, so there is nothing to pick and no picker is added. When present: `cod-proton cblauncher` opens a menu of your installed Protons - a KDE/GNOME dialog if available, otherwise a numbered terminal list - and writes the right file for you; `cod-proton cblauncher auto` clears it; `cod-proton` alone lists your Protons and current overrides. (On the default route, Proton is switched instead through Steam's Compatibility dropdown via `steamNative`, or by hand-writing an override file.)
-- **`plutonium.dotnet`** adds `dotnet472` for MW3/IW5. It is off by default because the install is slow and MW3/IW5 has an unfixed no-cursor bug on NixOS + GE-Proton; BO1/BO2/WaW do not need it.
-- **`t7x.blackOps3Dir`** empty auto-detects Black Ops III (app 311210) from Steam - see Store detection.
-- **`desktopEntries`** controls the app-drawer (`.desktop`) entry per client: a client absent from the set is shown; set it to `false` (e.g. `desktopEntries.boiii = false`) to install the launcher without a drawer entry, for Steam-only or CLI-only use.
-- **The Steam helpers** (`steamAdd`, `steamNative`, `steamLink`, `cleanops`) are individual opt-ins, off by default - enable only the ones you use. Each is a CLI you run manually with Steam closed (see the sections below).
-
-## Steam hours-tracking
-
-Plutonium runs on non-VAC servers and never touches the retail Steam client, so launching it does not risk a VAC ban - but by default it runs outside Steam, so Steam does not count the time. `cod-steamlink` wires it into Steam the way the community does it: it renames a game's launch exe and drops `plutonium.exe` in its place, so Steam's "Play" opens Plutonium and tracks the hours under that game.
-
-```bash
-cod-steamlink                       # default: Black Ops II (app 202970, t6mp.exe)
-cod-steamlink --appid N --exe NAME  # a different title/exe
-cod-steamlink --undo                # restore the original exe
-```
-
-It resolves the game directory (see below), backs up the original exe to `<exe>.cod-orig`, copies in the fetched `plutonium.exe`, marks it read-only, and prints the one command you run yourself to make it survive Steam auto-updates:
-
-```bash
-sudo chattr +i "<path>/t6mp.exe"
-```
-
-`--undo` restores the backup. Because Plutonium's launcher lets you pick any title, one swap (e.g. Black Ops II) is enough to track all your Plutonium hours under that game.
-
-## Add to Steam (any Proton, launch options)
-
-`cod-steam-add` registers every installed `cod-*` launcher as a non-Steam shortcut - the Heroic-style "Add to Steam", done for you:
-
-```bash
-cod-steam-add          # add all installed launchers (close Steam first)
-cod-steam-add list     # show which are registered
-cod-steam-add remove   # remove them again
-```
-
-Close Steam before adding (it rewrites `shortcuts.vdf` on exit); the helper backs up that file, only ever touches its own tagged entries, and never clobbers your other shortcuts. Restart Steam afterwards.
-
-Each shortcut points at the launcher - so it keeps the bubblewrap sandbox, the winetricks prefix, and the runtime client-fetch. That means **Proton is chosen per shortcut in Steam's Launch Options, not the Compatibility dropdown**: Steam's forced-Proton only drives a raw Windows `.exe` and would break a native launcher script. Set a specific Proton with `COD_PROTON=/path/to/proton %command%` in the shortcut's Launch Options (or leave it to `protonPath`). Launch options and Steam playtime work as normal.
-
-## Steam-native (Proton dropdown + per-mode)
-
-`cod-steam-native` is the other side of that trade-off: instead of the native launcher (where the Compatibility dropdown can't apply), it registers each client's **Windows `.exe`** so Steam runs it under its own Proton and **the dropdown works**. It reuses each client's already-prepared prefix - so Plutonium keeps its winetricks verbs - via `STEAM_COMPAT_DATA_PATH`, sets your newest GE-Proton as the default compat tool, and fetches official cover/hero/logo art.
-
-```bash
-# run each client once first so its prefix + .exe exist, then with Steam closed:
-cod-steam-native          # add per-mode Plutonium + t7x/h1/h2 shortcuts
-cod-steam-native list
-cod-steam-native remove
-```
-
-Plutonium gets one shortcut per owned game+mode (Black Ops II Multiplayer, Zombies, World at War, ...), each labeled with its own cover art and Steam hours. Each passes `plutonium://play/<code>` as a best-effort direct-launch; Plutonium's launcher may still open for you to pick the title/mode (the per-mode protocol launch is not confirmed to work under Proton - verify on first run). The bubblewrap sandbox does not apply on this path (Steam runs the `.exe` directly) - use the standalone `cod-*` launchers when you want the sandbox.
-
-## Store detection
-
-`cod-t7x` and `cod-steamlink` locate your games from Steam's own metadata, so a game on any drive is found. They scan every Steam install layout - native (`~/.steam/steam`, `~/.local/share/Steam`), Flatpak (`~/.var/app/com.valvesoftware.Steam`), and Snap (`~/snap/steam`) - and read each one's `steamapps/libraryfolders.vdf` to follow **moved and additional library folders** to the app's `appmanifest_<id>.acf`. If detection ever misses, pass an explicit path (`t7x.blackOps3Dir`, or `cod-steamlink --dir`).
-
-## Security
-
-Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, GPU/audio/input/display, the D-Bus session bus and the network. An AlterWare client also gets its game directory read-write, CB Launcher gets the directories named in `cblauncher.gameDirs` read-write, and a game rerouted by `cblauncher.subProton` gets its `gameDir` and `extraGameDirs` read-write. Each Steam library's `steamapps/shadercache` is overlaid with a writable per-client directory - the Steam client library and mesa write their appid-scoped shader cache there instead of failing on the read-only library (and never touch your real Steam state). It hides `$HOME` and every unrelated file, and umu's own Steam Runtime container runs inside it. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
-
-## Game Notes
-
-Per-title behavior on Wayland desktops, from tested setups rather than folklore.
-The launcher seeds CB's per-game launch options (`launchOptions`), installs
-per-prefix winetricks, and applies per-exe environment defaults; anything listed
-as an in-game setting cannot be packaged and is set once in the game's menu.
-
-| Game | Packaged | In-game / notes |
+| Command | Client | Game you bring |
 |---|---|---|
-| Advanced Warfare (s1x) | Rerouted prefix defaults to the Wayland recipe: `PROTON_USE_WAYLAND=1 PROTON_USE_SDL=1`; pair it with a Proton that implements the Wayland toggle (proton-cachyos) | Display mode Borderless avoids the exclusive-fullscreen freeze class |
-| Ghosts (iw6x) | `configFiles` enforces `r_displayMode "windowed (no border)"` on the primary monitor plus the menu-mouse routing and the frame cap in players2 configs | Borderless sidesteps the exclusive-fullscreen display switching behind the multi-monitor crash and alt-tab kill |
-| CoD4 (iw3mp via CoD4X) | rerouted prefix gets the frame cap; shared runtime fixed the join-time crash class | `raw_input 1` and resolution = display resolution if the cursor sticks to an edge; competitive fps points are 125/250/333 |
-| WaW / BO1 / BO2 (Plutonium) | `raw_input "1"` seeded into the T5/T6 player configs (the canonical Plutonium mouse fix); frame cap via CB launch options, and as `DXVK_FRAME_RATE` on the standalone client (mouse speed is FPS-coupled) | BO1: `r_dof_enable 0` fixes the ADS blur; keep fps caps at or under 165 there if mouse feel degrades |
-| CoD2 | none by default | `PROTON_NO_ESYNC=1` is load-bearing if it black-screens after the menu |
-| MW3 (iw5 via Plutonium) | none needed to launch | `vid_restart` in the console revives the menu mouse; Mouse Smoothing on and Vsync off correct the feel; keep mouse polling at or under 500 Hz |
-| Black Ops III (boiii) | steam client sync is automatic; via CB the packaged launch options default to `-nosteam` (Steam is an optional sidecar for BOIII - without a reachable running Steam its client library fatally asserts) | Use Borderless Fullscreen; exclusive fullscreen misbehaves on alt-tab |
-| CoD1 / United Offensive (stock, via CB) | the CB prefix sets `PROTON_OLD_GL_STRING=1` (the curated Proton fix for the old-GL-extension-string crash class; inert for the D3D titles sharing the prefix) | - |
-| CB Launcher dropdowns | not fixable client-side | KWin XWayland popup handling (KDE bug 516450), unfixed upstream |
+| `cod-plutonium` | Plutonium | Black Ops 1, Black Ops 2, World at War, Modern Warfare 3 |
+| `cod-t7x` | t7x | Black Ops III |
+| `cod-boiii` | BOIII | Black Ops III |
+| `cod-h1` | h1-mod | Modern Warfare Remastered |
+| `cod-hmw` | Horizon MW | Modern Warfare Remastered |
+| `cod-h2` | h2-mod | MW2 Campaign Remastered, which is not sold on Steam |
+| `cod-iw5` | AlterWare iw5-mod | Modern Warfare 3 (2011) |
+| `cod-iw6` | AlterWare iw6-mod | Ghosts |
+| `cod-s1` | AlterWare s1-mod | Advanced Warfare |
+| `cod-iw2` | AlterWare iw2-mod | Call of Duty 2 |
+| `cod-cblauncher` | CB Launcher | a hub for about 17 community clients, which it downloads itself into a folder you name |
 
-The frame cap (`maxFps`, by default the highest declared refresh rate of the
-host's displays, in whole Hz rounded down, minus 2) is injected wherever
-`com_maxfps` verifiably lands: launch options for the arg-consuming CB games,
-default arguments for rerouted prefixes, and Ghosts' config files. Black Ops
-III caps at 250 in its own menu and Black Ops 4 exposes no verified cap
-surface; both stay manual settings.
+Every client is off until you enable it. The Steam app id of each game and the
+notes for each client are in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
-Raw-input starvation under XWayland (frozen or escaping cursors in this game
-family) is fixed upstream by wine 11.13's focus-gated raw input; Proton builds
-rebased on it retire the per-game workarounds above.
+## Install
 
-## Caveats
-
-- **You must own the games** on Steam. These launchers mod games you own; they do not provide the base game.
-- **t7x / BO3 is experimental on Linux**: upstream does not test Linux and there are reports of a GStreamer/Media-Foundation codec error under Proton with no confirmed fix. If you hit it, try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
-- **The AlterWare family is experimental**: its Linux launch is unverified end-to-end and the iw2 client exe name is inferred. Enable per-game, own the base game, and expect to verify (and possibly adjust) on first run.
-- **Plutonium online play** needs a free Plutonium forum account and the latest revision (the client self-updates to it).
-- **Horizon MW** builds a farm of your owned MWR install and runs the official launcher from it; the launcher self-updates and downloads mod files into the farm on first run. Needs the .NET 8 Desktop Runtime and VC++ 2022 in the prefix (installed automatically via the `dotnetdesktop8` and `vcrun2022` winetricks verbs).
-- **BOIII** is a community fork of the BOIII client. The DXVK rendering path is unverified on Linux; it may only work in dedicated-server mode under Wine. Report rendering issues to upstream.
-- **CB Launcher** is a hub for many community clients, so it overlaps the individual `cod-*` clients and adds titles they do not cover (MW2 via IW4x, CoD4 via CoD4x, CoD1/UO, Infinite Warfare, BO4). It writes client and game files INTO the folder you point it at, so set `cblauncher.gameDirs` to a writable location and paste that path into its UI (its Browse button is disabled under Wine, so you type the path). It deletes a game dir's `d3d11.dll` before launch, so do not point it at a retail Black Ops III that `cod-cleanops` has patched.
-
-<!-- BEGIN generated:installation -->
-## Installation
-
-Add as a flake input:
+Add the flake:
 
 ```nix
 {
@@ -175,73 +46,100 @@ Add as a flake input:
 }
 ```
 
-<!-- END generated:installation -->
-
-## Usage
+Load the module from your NixOS configuration, then switch on the clients you
+want in your Home Manager configuration:
 
 ```nix
-# 1. flake input (above), then wire the module into the host:
-home-manager.sharedModules = [ inputs.cod-clients.homeModules.default ];
-
-# 2. enable it in the host HM config:
-myModules.home.cod-clients = {
-  enable = true;
-  plutonium.enable = true;
-  t7x.enable = true;
-};
+{
+  home-manager.sharedModules = [ inputs.cod-clients.homeModules.default ];
+}
 ```
 
-After a rebuild the launcher commands (`cod-plutonium`, `cod-t7x`) are on your PATH and in your application menu.
-
-## Running the clients
-
-Run each launcher **from a terminal** the first time - you see the setup progress and any errors. The first launch of a client is slow and one-time: it downloads umu's Steam Runtime, builds the Wine prefix, and fetches the client; later launches are fast.
-
-**`cod-plutonium`** - Black Ops 1/2, World at War (MW3/IW5 needs `plutonium.dotnet`):
-
-```bash
-cod-plutonium
+```nix
+{
+  myModules.home.cod-clients = {
+    enable = true;
+    plutonium.enable = true;
+  };
+}
 ```
 
-First run fetches `plutonium.exe`, installs the prefix verbs (a few minutes), then opens Plutonium's launcher. In it: log in with your free Plutonium forum account, point it at your Steam game folder, pick a title, and play. Start with BO1/BO2/WaW - MW3/IW5 is best-effort (see Caveats).
+The launchers are marked unfree, so nixpkgs has to allow unfree packages. After
+a rebuild `cod-plutonium` is on your PATH and in your application menu.
 
-**`cod-t7x`** - Black Ops III:
+## First run
 
-```bash
-cod-t7x
-```
+Run `cod-plutonium` from a terminal the first time, so you see the setup and
+any error. The first launch of a client is slow, once. It downloads umu's
+Steam Runtime, builds the Wine prefix and fetches the client. For Plutonium
+that takes several minutes.
 
-Auto-detects your owned BO3 install, builds the symlink farm, fetches t7x, and launches it. Experimental on Linux; if you hit the codec error, set `t7x.extraWinetricks = [ "mf" "mfplat" ]` and rebuild.
+Plutonium's own launcher then opens. Log in with your free Plutonium forum
+account, point it at your Steam game folder and pick a title.
 
-For Steam integration - hours, launch options, per-shortcut Proton - see [Add to Steam](#add-to-steam-any-proton-launch-options) and [Steam hours-tracking](#steam-hours-tracking). To switch Proton for a single run without a rebuild, prefix the command:
+## Options you are likely to set
 
-```bash
-COD_PROTON=~/.steam/steam/compatibilitytools.d/GE-Proton10-34 cod-plutonium
-```
+All of them sit under `myModules.home.cod-clients`. Every option, with its type
+and default: [docs/OPTIONS.md](docs/OPTIONS.md).
 
-## Troubleshooting
+| Option | What it is for |
+|---|---|
+| `protonPath` | The Proton the clients run under. The default is the GE-Proton pinned by nixpkgs. `"steam"` picks the newest one in Steam's `compatibilitytools.d` |
+| `plutonium.dotnet` | Adds `dotnet472` to the Plutonium prefix, which Modern Warfare 3 needs. Off by default because the install is slow |
+| `t7x.blackOps3Dir` | Where Black Ops III is, when it is not found in your Steam libraries. The other clients that look a game up in Steam have the same kind of option |
+| `h2.mw2crDir` | Where MW2 Campaign Remastered is. `cod-h2` cannot find it on its own |
+| `cblauncher.gameDirs` | The folders CB Launcher may write games into. Empty by default, so it can download nothing until you set it |
 
-- **First launch seems to hang** - it is downloading the umu runtime and building the prefix (Plutonium's verb install takes several minutes). Run from a terminal to watch; it happens once per client.
-- **`no valid Proton ...`** - `protonPath` is not a directory containing a `proton` script. The default is fine; if you set it, point at a `.../GE-Proton*/` dir, use `protonPath = "steam"`, or `COD_PROTON=<path>`.
-- **A client works only with `COD_SANDBOX=0`** - the sandbox is missing a bind the game needs; `COD_SANDBOX=0 cod-<client>` is the interim bypass. Please report it.
-- **"Steam must be installed for the game to run", or BO3 says "launching" then nothing happens** (BOIII, t7x, CB Launcher's BO3) - the boiii-lineage clients gate on the prefix's `HKLM\Software\Wow6432Node\Valve\Steam` `InstallPath` registry value plus a `steam.exe` at that path, AND their `steam_proxy` loads `steamclient64.dll` from there to build a Steam context (a missing DLL makes it hang after the gate passes). The launcher syncs all of it into every prefix: the registry value, and the real `steamclient64.dll` + `GameOverlayRenderer64.dll` + `steam.exe` copied from your installed Steam client's `legacycompat/` directory (the same source and file set Proton uses). The copies are signature-tracked against the source files, so a Steam client self-update re-syncs the prefix on the next launch instead of leaving stale DLLs behind. This needs the **Steam client installed** - a Steam-less host prints a clear message and only these clients are affected.
-- **BO3 via CB Launcher dies right after "Launching boiii.exe" with a Valve `pipes.cpp` "fatal stalled cross-thread pipe" assert** - that is Valve's steamclient library failing to reach a running, logged-in Steam client. BOIII treats Steam as an optional sidecar (its server auth and CB's presence/joins never use Steam), so the packaged default seeds `-nosteam` into CB's BO3 launch options and the Valve library is never loaded. You lose only the Steam overlay and live workshop sync; set `cblauncher.launchOptions.bo3 = ""` to restore the Steam integration attempt.
-- **A microphone icon flashes in the system tray at every launch (KDE Plasma)** - that is Plasma's microphone-in-use privacy indicator (`plasmashell_microphone`), not a launcher tray icon: game audio engines and CEF launchers open brief audio-capture probes while initializing (capture itself is legitimate - in-game voice chat uses it), and Plasma registers/removes the indicator for each short-lived stream (measured: 45 registrations during one CB Launcher start). It is desktop UX, not a launcher defect. To stop the strobe, move the Microphone entry to the hidden area: System Tray settings -> Entries -> Microphone -> Always hidden, or declaratively with plasma-manager: `systemTray.items.hidden = [ "plasmashell_microphone" ]` (it stays inspectable in the tray popup).
-- **CB Launcher dropdowns (language, etc.) do not appear** - CEF `<select>` popups are separate native windows Wine has historically failed to paint (WineHQ bug 33943). The launcher forces software compositing (`--disable-gpu --disable-gpu-compositing`, on top of `--in-process-gpu`), the standard CEF-under-Wine cure, which costs nothing for a launcher UI. If a dropdown still misbehaves, the popup usually exists but is unpainted: hover/sweep the mouse where the options would be, or use the arrow keys + Enter.
-- **t7x/BOIII: black screen or a "Media Feature Pack"/codec error** - on GE-Proton 11 the video stack is FFmpeg-based and the old `mf`/`mfplat` codec verbs are legacy; if intro/menu videos still hang, delete the game directory's `videos/` folder. A black screen WITH audio on a host with many audio devices is a different class - add `[ "sound=alsa" ]` to that client's `extraWinetricks` (the same fix Steam's protonfixes applies to retail BO3). On older Protons `[ "mf" "mfplat" ]` remains the codec remedy.
-- **Game not found** - detection reads Steam's `libraryfolders.vdf`; for an unusual install pass `t7x.blackOps3Dir = "/path"` or `cod-steamlink --dir /path`. See Store detection.
-- **Interrupted download** - fetches use `--remove-on-error`, so just re-run the launcher.
+Two environment variables change one run without a rebuild.
+`COD_PROTON=<path> cod-plutonium` runs it under another Proton, and
+`COD_SANDBOX=0 cod-plutonium` runs it without the sandbox.
 
-## Development
+## Steam
 
-```bash
-nix develop      # dev shell (git hooks + nil LSP)
-nix fmt          # format Nix (nixfmt-rfc-style)
-nix build .#cod-plutonium
-nix build .#cod-t7x
-nix build .#cod-steamlink
-nix flake check  # eval + build + std-conformance + module eval
-```
+Four optional helpers tie the clients into Steam. Each is off by default, is a
+command you run yourself with Steam closed, and can be undone. How to run them
+is in [docs/STEAM.md](docs/STEAM.md).
 
-<!-- BEGIN generated:footer -->
-<!-- END generated:footer -->
+| Option | Command | What it does |
+|---|---|---|
+| `steamAdd.enable` | `cod-steam-add` | Adds every installed launcher to Steam as a non-Steam shortcut. The sandbox stays |
+| `steamNative.enable` | `cod-steam-native` | Adds each client's `.exe` as a shortcut that Steam runs under its own Proton, so the Compatibility dropdown works. No sandbox |
+| `steamLink.enable` | `cod-steamlink` | Swaps a Steam game's exe for Plutonium, so Play starts Plutonium and Steam counts the hours |
+| `cleanops.enable` | `cod-cleanops` | Puts the CleanOps `d3d11.dll` into your retail Black Ops III |
+
+## Known limits
+
+- You must own the games. The launchers mod a copy you have and provide none.
+- Modern Warfare 3 through Plutonium has an unfixed no-cursor bug on NixOS with
+  GE-Proton.
+- t7x is not tested on Linux by its upstream, and a codec error under Proton is
+  reported with no confirmed fix.
+- The AlterWare clients have not been verified from start to finish.
+- BOIII's DXVK rendering is untested. It may only work as a dedicated server.
+
+## When something does not work
+
+- `no valid Proton`. `protonPath` is not a directory that holds a `proton`
+  script. Leave it at the default, set it to `"steam"`, or use `COD_PROTON`.
+- A game is not found. Set that client's directory option.
+- "Steam must be installed", or Black Ops III says launching and then nothing
+  happens. BOIII, t7x and CB Launcher's Black Ops III need the Steam client
+  installed on the machine.
+- A client works only with `COD_SANDBOX=0`. The sandbox is missing something
+  the game needs. Use the bypass for now and please report it.
+
+## More
+
+- [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md): every client, the settings
+  that belong in each game's own menu, troubleshooting in full
+- [docs/STEAM.md](docs/STEAM.md): the four Steam helpers and how to undo each
+- [docs/DESIGN.md](docs/DESIGN.md): where the clients come from, the sandbox,
+  how Proton is chosen, how the games are found
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): building and the checks
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the launchers are built
+- [SECURITY.md](SECURITY.md): how to report a vulnerability
+
+## License
+
+The packaging in this repository is MIT, see [LICENSE](LICENSE). The clients themselves are
+proprietary, third-party programs that are downloaded when you run them.
