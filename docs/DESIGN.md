@@ -37,7 +37,7 @@ Each launcher downloads from one place:
 ## The sandbox
 
 Every launcher runs inside a bubblewrap sandbox. The option is
-`myModules.home.cod-clients.sandbox`, on by default. The reason is that these
+`programs.cod-clients.sandbox`, on by default. The reason is that these
 are closed-source binaries fetched from third-party CDNs.
 
 The sandbox exposes what a game needs:
@@ -130,6 +130,6 @@ for Steam-only or command-line use.
 
 ## Options
 
-Every option under `myModules.home.cod-clients` is declared, with its type,
+Every option under `programs.cod-clients` is declared, with its type,
 default and description, in [hm-module.nix](../hm-module.nix). The flake exports
 the module as `homeModules.default`.

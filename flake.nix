@@ -94,7 +94,7 @@
             inherit (inputs) nixpkgs home-manager;
             inherit system;
             module = ./hm-module.nix;
-            config.myModules.home.cod-clients = {
+            config.programs.cod-clients = {
               enable = true;
               plutonium.enable = true;
               t7x.enable = true;

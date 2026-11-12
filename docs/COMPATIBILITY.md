@@ -103,11 +103,9 @@ packaged and is set once in the game's menu.
 
 ### Frame cap
 
-The frame cap is the `maxFps` option. By default it is the highest declared
-refresh rate of the host's displays, in whole Hz rounded down, minus 2. The
-module reads those displays from the NixOS option
-`myModules.desktop.displays.monitors`. On a host that does not declare it the
-default is no cap, and `maxFps` can be set by hand.
+The frame cap is the `maxFps` option. It defaults to no cap. Two below the
+panel's refresh rate, 238 on a 240 Hz panel, keeps it inside the
+adaptive-sync window.
 
 The cap is injected wherever `com_maxfps` verifiably lands: launch options for
 the arg-consuming CB games, default arguments for rerouted prefixes, and

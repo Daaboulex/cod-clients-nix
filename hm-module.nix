@@ -2,22 +2,10 @@
   config,
   lib,
   pkgs,
-  osConfig ? { },
   ...
 }:
 let
-  cfg = config.myModules.home.cod-clients;
-  displayMonitors =
-    if
-      osConfig ? myModules && osConfig.myModules ? desktop && osConfig.myModules.desktop ? displays
-    then
-      osConfig.myModules.desktop.displays.monitors or { }
-    else
-      { };
-  maxRefreshHz = lib.foldl' lib.max 0 (
-    map (m: m.mode.refreshRate / 1000) (lib.attrValues displayMonitors)
-  );
-  derivedMaxFps = if maxRefreshHz > 0 then maxRefreshHz - 2 else null;
+  cfg = config.programs.cod-clients;
   fpsGames = [
     "cod4x"
     "t4"
@@ -51,7 +39,7 @@ let
   };
 in
 {
-  options.myModules.home.cod-clients = {
+  options.programs.cod-clients = {
     enable = lib.mkEnableOption "the community Call of Duty client launchers (umu + Proton + bubblewrap)";
 
     protonPath = lib.mkOption {
@@ -94,17 +82,16 @@ in
 
     maxFps = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
-      default = derivedMaxFps;
-      defaultText = lib.literalExpression "highest declared monitor refresh minus 2, null without a displays module";
+      default = null;
       description = ''
         Frame cap injected into every client that verifiably consumes
         com_maxfps: the CB-managed arg-consuming games via launchOptions, the
         rerouted prefixes via their default arguments, and Ghosts via its
         config files. The standalone Plutonium client carries the same cap as
         a DXVK frame limit (DXVK_FRAME_RATE) because the old engines couple
-        mouse speed to frame rate. Derived from the host displays module so a
-        240 Hz panel yields 237 and the cap stays inside the adaptive-sync
-        window; null disables injection. Black Ops III caps at 250 in its own
+        mouse speed to frame rate. Two below the panel's refresh rate, 238 on
+        a 240 Hz panel, keeps the cap inside the adaptive-sync window; null,
+        the default, injects nothing. Black Ops III caps at 250 in its own
         menu and Black Ops 4 carries no verified cap surface -- both stay
         manual.
       '';
@@ -449,9 +436,7 @@ in
           Per-game launch options seeded into CB Launcher's properties.json
           (<game>-launch-options keys) before each start -- the launcher UI has
           no field for them under Wine. CB appends them to the game's command
-          line. The ghosts default routes mouse input past the raw-input path
-          that XWayland starves on Wayland desktops, which makes the menu
-          usable. The bo3 default is "-nosteam": BOIII's Steam integration is
+          line. The bo3 default is "-nosteam": BOIII's Steam integration is
           an optional sidecar (its auth and CB's presence/joins are
           Steam-free), and without a reachable running Steam client the Valve
           steamclient library it would load can kill the game with a fatal

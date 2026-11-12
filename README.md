@@ -57,7 +57,7 @@ want in your Home Manager configuration:
 
 ```nix
 {
-  myModules.home.cod-clients = {
+  programs.cod-clients = {
     enable = true;
     plutonium.enable = true;
   };
@@ -79,7 +79,7 @@ account, point it at your Steam game folder and pick a title.
 
 ## Options you are likely to set
 
-All of them sit under `myModules.home.cod-clients`. Every option, with its type
+All of them sit under `programs.cod-clients`. Every option, with its type
 and default: [docs/OPTIONS.md](docs/OPTIONS.md).
 
 | Option | What it is for |

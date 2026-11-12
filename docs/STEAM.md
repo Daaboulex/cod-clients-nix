@@ -1,7 +1,7 @@
 # Steam integration
 
 Four optional helpers. Each is its own opt-in under
-`myModules.home.cod-clients`, off by default, so enable only the ones you use.
+`programs.cod-clients`, off by default, so enable only the ones you use.
 Each is a command you run yourself with Steam closed.
 
 | Option | Command | Titles | Base game | What it does |
