@@ -6,35 +6,35 @@ How `cod-clients-nix` is built, how it runs, how to extend it, and the standards
 
 A single Home Manager module flake that packages community Call of Duty clients for Linux. Every client is ownership-respecting: it mods a game you own on Steam. The flake packages the reproducible launch environment (umu-launcher + Proton + a bubblewrap sandbox + a robust Steam-library resolver); the actual game clients are self-updating and fetched at runtime, never re-hosted or frozen into the Nix store.
 
-It is a consumer of the Nix Packaging Standard (`github:Daaboulex/nix-packaging-standard`, pinned to a release tag), which supplies the CI, the lint/format gate, and the conformance checks.
+It is a consumer of the Nix Packaging Standard (`github:Daaboulex/nix-packaging-standard`, following its `release` branch), which supplies the CI, the lint/format gate, and the conformance checks.
 
 ## Repository layout
 
 | Path | Role |
 |---|---|
-| `flake.nix` | Inputs, `overlays.default`, `homeModules.default`, `packages.cod-*`, the `checks` |
-| `hm-module.nix` | The `myModules.home.cod-clients` option surface + package wiring |
-| `pkgs/cod-launcher/default.nix` | `mkCodLauncher` - the core launcher builder |
-| `pkgs/cod-launcher/clients.nix` | Every client + the `mkFarmClient` / `mkAlterware` helpers |
-| `pkgs/cod-launcher/sandbox.nix` | `cod_launch` - the bubblewrap wrapper |
-| `pkgs/cod-launcher/steam-resolve.nix` | Steam-library resolver (native/Flatpak/Snap, moved libraries) |
-| `pkgs/cod-launcher/steamlink.nix` | `cod-steamlink` - reversible exe-swap for Steam hours |
+| [`flake.nix`](flake.nix) | Inputs, `overlays.default`, `homeModules.default`, `packages.cod-*`, the `checks` |
+| [`hm-module.nix`](hm-module.nix) | The `myModules.home.cod-clients` option surface + package wiring |
+| [`pkgs/cod-launcher/default.nix`](pkgs/cod-launcher/default.nix) | The base launcher builder |
+| [`pkgs/cod-launcher/clients.nix`](pkgs/cod-launcher/clients.nix) | Every client + the `mkFarmClient` / `mkAlterware` helpers |
+| [`pkgs/cod-launcher/sandbox.nix`](pkgs/cod-launcher/sandbox.nix) | `cod_launch` - the bubblewrap wrapper |
+| [`pkgs/cod-launcher/steam-resolve.nix`](pkgs/cod-launcher/steam-resolve.nix) | Steam-library resolver (native/Flatpak/Snap, moved libraries) |
+| [`pkgs/cod-launcher/steamlink.nix`](pkgs/cod-launcher/steamlink.nix) | `cod-steamlink` - reversible exe-swap for Steam hours |
 | `pkgs/cod-launcher/steam-add.{nix,py}` | `cod-steam-add` - native-launcher non-Steam shortcuts |
 | `pkgs/cod-launcher/steam-native.{nix,py}` | `cod-steam-native` - `.exe` shortcuts under Steam's Proton |
-| `pkgs/cod-launcher/cleanops.nix` | `cod-cleanops` - CleanOps DLL installer for retail BO3 |
-| `pkgs/cod-launcher/proton.nix` | `cod-proton` - Proton picker writing the runtime override files |
+| [`pkgs/cod-launcher/cleanops.nix`](pkgs/cod-launcher/cleanops.nix) | `cod-cleanops` - CleanOps DLL installer for retail BO3 |
+| [`pkgs/cod-launcher/proton.nix`](pkgs/cod-launcher/proton.nix) | `cod-proton` - Proton picker writing the runtime override files |
 | `pkgs/cod-launcher/*-test.py` | `runCommand` regression tests wired as flake checks |
-| `.github/update.json` | Repo metadata (description, topics, `upstream.type`, arch drops) |
+| [`.github/update.json`](.github/update.json) | Repo metadata (description, topics, `upstream.type`, arch drops) |
 | `.github/workflows/*` | Synced byte-for-byte from the standard - do not hand-edit |
-| `README.md` | User-facing docs (has the standard's `generated:*` markers) |
+| [`README.md`](README.md) | User-facing docs (has the standard's `generated:*` markers) |
 
 ## The client model
 
-Every client is one `writeShellApplication` (shellcheck-clean, `set -euo pipefail`) plus a `.desktop` entry, joined with `symlinkJoin`. There are three builders, all in `clients.nix`.
+Every client is one `writeShellApplication` (shellcheck-clean, `set -euo pipefail`) plus a `.desktop` entry, joined with `symlinkJoin`. There are three builders: the base builder in [`default.nix`](pkgs/cod-launcher/default.nix), and two helpers in [`clients.nix`](pkgs/cod-launcher/clients.nix) that call it.
 
-### `mkCodLauncher` (`default.nix`)
+### The base builder
 
-The base builder. Given a client spec it generates a launcher that, at run time:
+The function in [`default.nix`](pkgs/cod-launcher/default.nix), bound as `mk` in [`clients.nix`](pkgs/cod-launcher/clients.nix). Given a client spec it generates a launcher that, at run time:
 
 1. Sources the Steam resolver and the sandbox function.
 2. Creates the client's state dir at `~/.local/share/cod-clients/<name>`.
@@ -73,22 +73,22 @@ For the AlterWare family (iw5/iw6/s1/iw2). It runs the native `alterware-launche
 
 | Command | Game | Builder |
 |---|---|---|
-| `cod-plutonium` | BO1/BO2/WaW (MW3 opt-in) | `mkCodLauncher` + winetricks verbs |
+| `cod-plutonium` | BO1/BO2/WaW (MW3 opt-in) | the base builder + winetricks verbs |
 | `cod-t7x` | BO3 | `mkFarmClient` (real-copies `BlackOps3.exe`) |
 | `cod-h1` | Modern Warfare Remastered | `mkFarmClient` |
 | `cod-h2` | MW2 Campaign Remastered | `mkFarmClient` |
-| `cod-hmw` | Modern Warfare Remastered | `mkCodLauncher` (acquire hook fetches the HMW launcher) |
+| `cod-hmw` | Modern Warfare Remastered | the base builder (acquire hook fetches the HMW launcher) |
 | `cod-boiii` | BO3 | `mkFarmClient` |
-| `cod-cblauncher` | multi-title hub | `mkCodLauncher` (portable launcher, no farm) |
+| `cod-cblauncher` | multi-title hub | the base builder (portable launcher, no farm) |
 | `cod-iw5`/`iw6`/`s1`/`iw2` | MW3-2011/Ghosts/AW/CoD2 | `mkAlterware` |
 
 ## Runtime: umu + Proton + sandbox
 
 `umu-launcher` runs the Windows `.exe` under Proton, bringing its own Steam Linux Runtime (no Steam needed). The default Proton is the pinned nixpkgs `proton-ge-bin.steamcompattool` (its `out` is a 112-byte stub - always use `.steamcompattool`).
 
-Every launch is wrapped in an outer bubblewrap (`cod_launch` in `sandbox.nix`): it exposes `/nix/store` (ro), the Steam-library `steamapps` (ro), the client's own state/prefix (rw), GPU/audio/input/display sockets, the D-Bus session bus, and the network - and hides `$HOME` and everything else. `COD_SANDBOX=0` bypasses it for one launch. The verb install runs unsandboxed (`COD_SANDBOX=0`). A client that must write into game directories (CB Launcher patches installs in place) declares them via `cblauncher.gameDirs` -> the `cod_rw_dirs` bind list, each mounted read-write; the default is empty (fail closed).
+Every launch is wrapped in an outer bubblewrap (`cod_launch` in [`sandbox.nix`](pkgs/cod-launcher/sandbox.nix)): it exposes `/nix/store` (ro), the Steam-library `steamapps` (ro), the client's own state/prefix (rw), GPU/audio/input/display sockets, the D-Bus session bus, and the network - and hides `$HOME` and everything else. `COD_SANDBOX=0` bypasses it for one launch. The verb install runs unsandboxed (`COD_SANDBOX=0`). A client that must write into game directories (CB Launcher patches installs in place) declares them via `cblauncher.gameDirs` -> the `cod_rw_dirs` bind list, each mounted read-write; the default is empty (fail closed).
 
-The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak/Snap base dirs), `resolve_steam_dir <appid>` (follows moved/extra libraries via `libraryfolders.vdf` to the install dir), and `list_steam_libraries`.
+The Steam resolver ([`steam-resolve.nix`](pkgs/cod-launcher/steam-resolve.nix)) provides `_steam_roots` (native/Flatpak/Snap base dirs), `resolve_steam_dir <appid>` (follows moved/extra libraries via `libraryfolders.vdf` to the install dir), and `list_steam_libraries`.
 
 ## Proton selection
 
@@ -100,7 +100,7 @@ The Steam resolver (`steam-resolve.nix`) provides `_steam_roots` (native/Flatpak
 4. `protonPath = "steam"` - auto-detect the newest Proton in Steam's `compatibilitytools.d` (an aarch64 tool is skipped on an x86_64 host, guarding against a wrongly downloaded arm64 GE-Proton).
 5. The baked `protonPath` default - pinned nixpkgs GE-Proton, reproducible.
 
-`cod-proton` (in `proton.nix`, installed by the module when `protonPath = "steam"`) is the picker UI for the override files: a KDE/GNOME dialog or numbered terminal menu of installed Protons that writes/clears them.
+`cod-proton` (in [`proton.nix`](pkgs/cod-launcher/proton.nix), installed by the module when `protonPath = "steam"`) is the picker UI for the override files: a KDE/GNOME dialog or numbered terminal menu of installed Protons that writes/clears them.
 
 ## Per-game Proton reroute and declarative CB settings
 
@@ -110,7 +110,7 @@ CB Launcher spawns every title through one `CreateProcessW`, so it drives a sing
 
 ## The Home Manager module
 
-`hm-module.nix` exposes `myModules.home.cod-clients`:
+[`hm-module.nix`](hm-module.nix) exposes `myModules.home.cod-clients`:
 
 - `enable`, `sandbox` (default on), `protonPath`, `protonPaths` (per-client Proton overrides, keyed by client name), `maxFps` (display-derived frame cap, seeded into every arg-consuming game's settings).
 - `plutonium.{enable, dotnet, extraWinetricks, extraArgs, env}`.
@@ -122,7 +122,7 @@ CB Launcher spawns every title through one `CreateProcessW`, so it drives a sing
 - `desktopEntries` (attrset, client name -> bool): per-client app-drawer control; a client absent from the set gets a `.desktop` entry, `false` installs the launcher without one.
 - `steamAdd`/`steamNative`/`steamLink`/`cleanops` `.enable`: the four Steam helpers, each an individual opt-in (default off).
 
-`config` instantiates the clients (passing the option values into `clients.nix`) and adds the enabled launchers plus each opted-in Steam helper (`cod-steam-add`, `cod-steam-native`, `cod-steamlink`, `cod-cleanops`) to `home.packages`, plus `cod-proton` when `protonPath = "steam"`. Per-client `.desktop` entries are controlled by `desktopEntries`.
+`config` instantiates the clients (passing the option values into [`clients.nix`](pkgs/cod-launcher/clients.nix)) and adds the enabled launchers plus each opted-in Steam helper (`cod-steam-add`, `cod-steam-native`, `cod-steamlink`, `cod-cleanops`) to `home.packages`, plus `cod-proton` when `protonPath = "steam"`. Per-client `.desktop` entries are controlled by `desktopEntries`.
 
 ## Steam integration
 
@@ -137,43 +137,28 @@ The two shortcut tools share the same Python pattern: binary `shortcuts.vdf` is 
 
 ## Flake outputs and the standard
 
-`flake.nix` imports `inputs.std.flakeModules.base`, which provides the git-hooks gate (nixfmt-rfc-style, typos, rumdl, check-readme-sections), the formatter, the dev shell, `std-conformance`/`std-devstate`/`std-update-json`, and aliases every declared package into `checks` on the systems its `meta.platforms` supports. The flake declares:
+[`flake.nix`](flake.nix) imports `inputs.std.flakeModules.base`, which provides the git-hooks gate (nixfmt-rfc-style, typos, rumdl, check-readme-sections), the formatter, the dev shell, `std-conformance`/`std-devstate`/`std-update-json`, and aliases every declared package into `checks` on the systems its `meta.platforms` supports. The flake declares:
 
 - `packages.cod-*` (one per client + helper) and `packages.default`.
 - `overlays.default` exposing every `cod-*` (the standard's shape is package + overlay + module).
 - `homeModules.default`.
-- `checks.module-eval-hm` (full HM module eval with clients enabled), `checks.steam-add-logic`, `checks.steam-native-logic`.
+- `checks.module-eval-hm` (full HM module eval with clients enabled), `checks.sub-proton-build` (builds CB Launcher with a `subProton` entry), `checks.steam-add-logic`, `checks.steam-native-logic`.
 
-Conformance: MIT `LICENSE` (the packaging is MIT; clients are `meta.license = unfree`), `.github/update.json` with `upstream.type: "none"` (third-party wrapper, no CHANGELOG required), a `platforms.aarch64-linux` drop reason, and the synced workflow/`.envrc`/`.gitignore` files kept byte-identical (enforced by `std-conformance`). Never hand-edit the synced files - change them in the standard and re-sync.
+Conformance: MIT [`LICENSE`](LICENSE) (the packaging is MIT; clients are `meta.license = unfree`), [`.github/update.json`](.github/update.json) with `upstream.type: "none"` (third-party wrapper, no CHANGELOG required), a `platforms.aarch64-linux` drop reason, and the synced workflow/[`.envrc`](.envrc)/[`.gitignore`](.gitignore) files kept byte-identical (enforced by `std-conformance`). Never hand-edit the synced files - change them in the standard and re-sync.
 
 ## CI/CD
 
-`ci.yml` (identical fleet-wide, SHA-pinned actions): on push/PR it reclaims disk, then on a `[ubuntu-latest, ubuntu-24.04-arm]` matrix builds every output the flake declares for that system via `nix-fast-build --skip-cached`. `cache.nixos.org` substitutes unmodified deps (GE-Proton included). It retries transient fetch failures once. A separate `no-ai-files` job guards the tree.
+[`ci.yml`](.github/workflows/ci.yml) and [`maintenance.yml`](.github/workflows/maintenance.yml) call the standard's reusable workflows on its `release` branch. The [standard's README](https://github.com/Daaboulex/nix-packaging-standard#ci-model) describes them.
 
-Why it is robust: the launchers are `writeShellApplication` packages with no build-time network - the client downloads happen at launch, not in CI, so a failed `curl` can never break the build. Every runtime fetch uses `--remove-on-error`; every Steam helper backs up before writing. `maintenance.yml` refreshes `flake.lock` weekly and opens an issue if the rebuild goes red.
+Why it is robust: the launchers are `writeShellApplication` packages with no build-time network - the client downloads happen at launch, not in CI, so a failed `curl` can never break the build. Every runtime fetch uses `--remove-on-error`; every Steam helper backs up before writing. [`maintenance.yml`](.github/workflows/maintenance.yml) refreshes [`flake.lock`](flake.lock) weekly and opens an issue if the rebuild goes red.
 
 ## Adding a client
 
-1. Pick the builder: `mkFarmClient` (a self-updating `.exe` + owned game), `mkAlterware` (an alterware-launcher code), or `mkCodLauncher` directly (needs winetricks verbs, like Plutonium).
-2. Add the block to `clients.nix` (for a farm client it is the one-liner above) and, if it takes options, thread `dirOverride`/`winetricks`/`extraArgs` through the function params.
-3. Add the option to `hm-module.nix` (`enable`, a `<game>Dir`, `extraWinetricks`, `extraArgs`), pass the values into the `clients` call, and add `++ lib.optional cfg.<name>.enable clients.<name>` to `home.packages`.
-4. Add `cod-<name> = clients.<name>;` to `overlays.default` and `packages.cod-<name> = pkgs.cod-<name>;` in `flake.nix`, and `<name>.enable = true;` to the `module-eval-hm` config.
-5. Document it in `README.md` (intro bullet + clients table).
+1. Pick the builder: `mkFarmClient` (a self-updating `.exe` + owned game), `mkAlterware` (an alterware-launcher code), or the base builder directly (needs winetricks verbs, like Plutonium).
+2. Add the block to [`clients.nix`](pkgs/cod-launcher/clients.nix) (for a farm client it is the one-liner above) and, if it takes options, thread `dirOverride`/`winetricks`/`extraArgs` through the function params.
+3. Add the option to [`hm-module.nix`](hm-module.nix) (`enable`, a `<game>Dir`, `extraWinetricks`, `extraArgs`), pass the values into the `clients` call, and add `++ lib.optional cfg.<name>.enable clients.<name>` to `home.packages`.
+4. Add `cod-<name> = clients.<name>;` to `overlays.default` and `packages.cod-<name> = pkgs.cod-<name>;` in [`flake.nix`](flake.nix), and `<name>.enable = true;` to the `module-eval-hm` config.
+5. Document it in [`README.md`](README.md) (intro bullet + clients table).
 6. `git add` the new files, `nix flake check`, commit, push.
 
-If it is a Steam-launched-only client (like CleanOps), model it as a helper (drop a file into the owned game + print the launch option) rather than a `mkCodLauncher` launcher.
-
-## Working on the repo
-
-- `nix flake check` is the gate (builds every package, runs conformance + the module eval + the logic tests). Builds offload to the build farm when reachable, else build locally.
-- Flakes see only git-tracked files: `git add` new files before `nix flake check`, or eval fails with "not tracked by Git".
-- `nix fmt` currently errors in this repo (a treefmt/nixfmt stdin quirk). Format a flagged file directly with `nix run nixpkgs#nixfmt-rfc-style -- <file>`; the pre-commit hook is the real gate.
-- Do not revert the treefmt hook with `git checkout`; re-run the formatter.
-
-## Standards to follow
-
-- Ownership line: only package clients that mod a game you own. Never package a tool whose function is bypassing ownership verification or distributing/downloading the base games.
-- Fail closed: validate the game dir, back up before overwriting, `--remove-on-error` on fetches, refuse Steam-config writes while Steam runs, everything reversible.
-- No comments in source (names/types/structure carry intent); ASCII only.
-- Commit as Daaboulex, no AI attribution; run the full check and commit only on green; end substantive commits with an `Eval:` trailer (`nix-flake-check=pass`).
-- Runtime-update model: fetch the official self-updating client at launch; never re-host or freeze a game payload.
+If it is a Steam-launched-only client (like CleanOps), model it as a helper (drop a file into the owned game + print the launch option) rather than a launcher from the base builder.

@@ -59,68 +59,7 @@ Every launcher runs inside a **bubblewrap sandbox** (see Security). The live cli
 
 ## Home Manager Module
 
-The repo exports `homeModules.default`. Options:
-
-```nix
-myModules.home.cod-clients = {
-  enable = true;                         # master switch
-  sandbox = true;                        # bubblewrap: game-only access (default on)
-  protonPath = "${pkgs.proton-ge-bin.steamcompattool}";  # default: pinned nixpkgs GE-Proton, or "steam"
-  desktopEntries = { };                  # per-client app-drawer control, e.g. { boiii = false; } to hide one
-  plutonium = {
-    enable = true;                       # cod-plutonium
-    dotnet = false;                      # opt-in MW3/IW5 support (installs dotnet472)
-    extraWinetricks = [ ];               # extra prefix verbs
-    extraArgs = [ ];                     # extra plutonium.exe args (LAN etc.)
-  };
-  t7x = {
-    enable = true;                       # cod-t7x
-    blackOps3Dir = "";                   # empty = auto-detect from Steam
-    extraWinetricks = [ ];               # e.g. [ "mf" "mfplat" ] for codec issues
-    extraArgs = [ ];
-  };
-  h1 = {                                 # experimental, default-off
-    enable = false;                      # h1-mod (Modern Warfare Remastered)
-    mwrDir = "";                         # empty = auto-detect from Steam (app 393080)
-    extraWinetricks = [ ];               # extra prefix verbs
-    extraArgs = [ ];
-  };
-  h2 = {                                 # experimental, default-off
-    enable = false;                      # h2-mod (MW2 Campaign Remastered, Battle.net-only)
-    mw2crDir = "";                       # required: MW2CR is not on Steam, set it explicitly
-    extraWinetricks = [ ];               # extra prefix verbs
-    extraArgs = [ ];
-  };
-  alterware = {                          # experimental, default-off
-    iw5.enable = false;                  # Modern Warfare 3 (2011)
-    iw6.enable = false;                  # Ghosts
-    s1.enable = false;                   # Advanced Warfare
-    iw2.enable = false;                  # Call of Duty 2
-  };
-  hmw = {                                # experimental, default-off
-    enable = false;                      # Horizon MW (MWR mod)
-    mwrDir = "";                         # empty = auto-detect from Steam (app 393080)
-    extraWinetricks = [ ];               # extra prefix verbs
-    extraArgs = [ ];
-  };
-  boiii = {                              # experimental, default-off
-    enable = false;                      # BOIII client (BO3)
-    blackOps3Dir = "";                   # empty = auto-detect from Steam (app 311210)
-    extraWinetricks = [ ];               # e.g. [ "mf" "mfplat" ] for the BO3 codec error
-    extraArgs = [ ];
-  };
-  cblauncher = {                         # experimental, default-off
-    enable = false;                      # CB Launcher hub
-    gameDirs = [ ];                      # writable dirs it may manage games in (RW in sandbox); paste one into its UI
-    extraWinetricks = [ ];               # extra prefix verbs for a sub-client, e.g. [ "dotnet472" ] or [ "mf" "mfplat" ]
-    extraArgs = [ ];                     # extra cb-launcher.exe args (after the packaged CEF flags)
-  };
-  steamAdd.enable = false;               # cod-steam-add: non-Steam shortcuts -> sandboxed native launcher
-  steamNative.enable = false;            # cod-steam-native: .exe shortcuts under Steam's Proton (dropdown)
-  steamLink.enable = false;              # cod-steamlink: exe-swap for Plutonium Steam hours
-  cleanops.enable = false;               # cod-cleanops: CleanOps DLL into retail Black Ops III
-};
-```
+The repo exports `homeModules.default`. Every option under `myModules.home.cod-clients` is declared, with its type, default and description, in [`hm-module.nix`](hm-module.nix).
 
 - **`protonPath`** is what umu runs the clients under. The default pins nixpkgs GE-Proton reproducibly (its `steamcompattool` output). Set it to `"steam"` to auto-detect the newest Proton in your Steam `compatibilitytools.d` (where ProtonPlus installs its builds; the auto-detect skips an aarch64 Proton build on an x86_64 host so a wrongly downloaded arm64 GE-Proton can't be picked), or to a specific Proton path. Three runtime overrides need **no rebuild**, in priority order: `COD_PROTON=<path>` for a single launch; a **per-client** file `~/.config/cod-clients/<name>.proton` (e.g. `cblauncher.proton`) to pin one client's Proton; or the global `~/.config/cod-clients/proton`. Each file holds a Proton path or a `compatibilitytools.d` tool name, and applies to app-drawer launches too.
 - **`cod-proton`** is the friendly picker for those overrides. It is installed only when `protonPath = "steam"` - the route where you have several Protons to choose between; on the default pinned-GE route Proton is fixed, so there is nothing to pick and no picker is added. When present: `cod-proton cblauncher` opens a menu of your installed Protons - a KDE/GNOME dialog if available, otherwise a numbered terminal list - and writes the right file for you; `cod-proton cblauncher auto` clears it; `cod-proton` alone lists your Protons and current overrides. (On the default route, Proton is switched instead through Steam's Compatibility dropdown via `steamNative`, or by hand-writing an override file.)
@@ -180,7 +119,7 @@ Plutonium gets one shortcut per owned game+mode (Black Ops II Multiplayer, Zombi
 
 ## Security
 
-Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes only what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, and GPU/audio/input/display/network. Each Steam library's `steamapps/shadercache` is overlaid with a writable per-client directory - the Steam client library and mesa write their appid-scoped shader cache there instead of failing on the read-only library (and never touch your real Steam state). It hides `$HOME` and every unrelated file, and nests inside umu's own Steam Runtime container. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
+Every launcher runs inside a bubblewrap sandbox (`myModules.home.cod-clients.sandbox`, default on). Because these are closed-source binaries fetched from third-party CDNs, the sandbox exposes what a game needs: your Steam library game files (read-only), the client's own prefix and state (read-write), `/nix/store`, GPU/audio/input/display, the D-Bus session bus and the network. An AlterWare client also gets its game directory read-write, CB Launcher gets the directories named in `cblauncher.gameDirs` read-write, and a game rerouted by `cblauncher.subProton` gets its `gameDir` and `extraGameDirs` read-write. Each Steam library's `steamapps/shadercache` is overlaid with a writable per-client directory - the Steam client library and mesa write their appid-scoped shader cache there instead of failing on the read-only library (and never touch your real Steam state). It hides `$HOME` and every unrelated file, and umu's own Steam Runtime container runs inside it. Set `COD_SANDBOX=0` in the environment to bypass it for a single launch (for debugging).
 
 ## Game Notes
 
@@ -201,11 +140,12 @@ as an in-game setting cannot be packaged and is set once in the game's menu.
 | CoD1 / United Offensive (stock, via CB) | the CB prefix sets `PROTON_OLD_GL_STRING=1` (the curated Proton fix for the old-GL-extension-string crash class; inert for the D3D titles sharing the prefix) | - |
 | CB Launcher dropdowns | not fixable client-side | KWin XWayland popup handling (KDE bug 516450), unfixed upstream |
 
-The frame cap (`maxFps`, derived from the host's declared displays, 237 on a
-240 Hz panel) is injected wherever `com_maxfps` verifiably lands: launch
-options for the arg-consuming CB games, default arguments for rerouted
-prefixes, and Ghosts' config files. Black Ops III caps at 250 in its own menu
-and Black Ops 4 exposes no verified cap surface; both stay manual settings.
+The frame cap (`maxFps`, by default the highest declared refresh rate of the
+host's displays, in whole Hz rounded down, minus 2) is injected wherever
+`com_maxfps` verifiably lands: launch options for the arg-consuming CB games,
+default arguments for rerouted prefixes, and Ghosts' config files. Black Ops
+III caps at 250 in its own menu and Black Ops 4 exposes no verified cap
+surface; both stay manual settings.
 
 Raw-input starvation under XWayland (frozen or escaping cursors in this game
 family) is fixed upstream by wine 11.13's focus-gated raw input; Proton builds
@@ -215,7 +155,7 @@ rebased on it retire the per-game workarounds above.
 
 - **You must own the games** on Steam. These launchers mod games you own; they do not provide the base game.
 - **t7x / BO3 is experimental on Linux**: upstream does not test Linux and there are reports of a GStreamer/Media-Foundation codec error under Proton with no confirmed fix. If you hit it, try `t7x.extraWinetricks = [ "mf" "mfplat" ]`.
-- **The AlterWare family is experimental**: its Linux launch is unverified end-to-end and the iw4x/iw2 client exe names are inferred. Enable per-game, own the base game, and expect to verify (and possibly adjust) on first run.
+- **The AlterWare family is experimental**: its Linux launch is unverified end-to-end and the iw2 client exe name is inferred. Enable per-game, own the base game, and expect to verify (and possibly adjust) on first run.
 - **Plutonium online play** needs a free Plutonium forum account and the latest revision (the client self-updates to it).
 - **Horizon MW** builds a farm of your owned MWR install and runs the official launcher from it; the launcher self-updates and downloads mod files into the farm on first run. Needs the .NET 8 Desktop Runtime and VC++ 2022 in the prefix (installed automatically via the `dotnetdesktop8` and `vcrun2022` winetricks verbs).
 - **BOIII** is a community fork of the BOIII client. The DXVK rendering path is unverified on Linux; it may only work in dedicated-server mode under Wine. Report rendering issues to upstream.
@@ -251,7 +191,7 @@ myModules.home.cod-clients = {
 };
 ```
 
-After a rebuild the launcher commands (`cod-plutonium`, `cod-t7x`, `cod-steamlink`, `cod-steam-add`) are on your PATH and in your application menu.
+After a rebuild the launcher commands (`cod-plutonium`, `cod-t7x`) are on your PATH and in your application menu.
 
 ## Running the clients
 
@@ -302,15 +242,6 @@ nix build .#cod-t7x
 nix build .#cod-steamlink
 nix flake check  # eval + build + std-conformance + module eval
 ```
-
-## CI/CD
-
-| Workflow | Trigger | Purpose |
-|---|---|---|
-| `ci.yml` | Push/PR | Eval, format, build every declared output |
-| `maintenance.yml` | Weekly | Refresh `flake.lock`, prune stale branches |
-
-All GitHub Actions are pinned to full commit SHAs, synced from the Nix Packaging Standard.
 
 <!-- BEGIN generated:footer -->
 <!-- END generated:footer -->
